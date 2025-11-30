@@ -280,6 +280,51 @@
       color: var(--success);
     }
     
+    /* Task assignments in card */
+    .task-assignments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    
+    .task-assignment-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--gray-700);
+    }
+    
+    .task-assignment-chip span {
+      white-space: nowrap;
+    }
+    
+    .task-assignment-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      background: var(--gray-300);
+      color: var(--gray-600);
+      border-radius: 50%;
+      font-size: 0.65rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    
+    .task-assignment-remove:hover {
+      background: var(--danger);
+      color: white;
+    }
+    
     /* Task dragging */
     .task-card {
       cursor: grab;
@@ -469,6 +514,10 @@
       background: var(--danger);
     }
     
+    .timeline-slot-header {
+      flex-shrink: 0;
+    }
+    
     .timeline-slot-title {
       font-weight: 600;
       white-space: nowrap;
@@ -479,6 +528,16 @@
     .timeline-slot-time {
       font-size: 0.7rem;
       opacity: 0.9;
+    }
+    
+    .timeline-slot-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      opacity: 0.6;
+      font-style: italic;
     }
     
     .timeline-slot-capacity {
@@ -535,17 +594,30 @@
     }
     
     .timeline-slot-assignments {
-      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
       font-size: 0.7rem;
-      opacity: 0.9;
+      margin-top: 2px;
+      overflow: hidden;
+      gap: 1px;
     }
     
     .timeline-slot-assignment {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 2px 0;
-      border-top: 1px dashed rgba(255,255,255,0.3);
+      padding: 1px 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    
+    .timeline-slot-assignment span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
     }
     
     .timeline-slot-assignment button {
@@ -951,6 +1023,25 @@
     </div>
   </div>
 
+  <!-- MODAL OVERBOOKING -->
+  <div class="modal-overlay" id="overbookingModal">
+    <div class="modal">
+      <h3>⚠️ Hueco excedido</h3>
+      <p id="overbookingInfo" style="margin-bottom: 16px;"></p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn btn-primary" id="overbookingExpandSlot">
+          📐 Ampliar hueco a <span id="overbookingNewSlotDuration"></span> min
+        </button>
+        <button class="btn btn-secondary" id="overbookingReduceTask">
+          ✂️ Ajustar tarea a <span id="overbookingNewTaskDuration"></span> min
+        </button>
+        <button class="btn btn-secondary" id="overbookingDoNothing">
+          ⏭️ Dejar así (ajustaré después)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ========== UTILIDADES ==========
     
@@ -1126,9 +1217,10 @@
 
     /**
      * Asigna minutos de una tarea a un slot
+     * Permite overbooking - el usuario puede ajustar después
      */
     function assignTask(state, slotId, taskId, minutes) {
-      // Validaciones
+      // Validaciones básicas
       if (minutes <= 0) {
         throw new Error('Los minutos deben ser mayores a 0');
       }
@@ -1139,9 +1231,7 @@
       if (!slotStats) throw new Error('Hueco no encontrado');
       if (!taskStats) throw new Error('Tarea no encontrada');
       
-      if (minutes > slotStats.remainingMin) {
-        throw new Error(`Solo quedan ${slotStats.remainingMin} minutos en este hueco`);
-      }
+      // Ya no rechazamos por exceder capacidad - permitimos overbooking
       
       if (taskStats.remainingMin <= 0) {
         throw new Error('Esta tarea ya está completamente asignada');
@@ -1238,16 +1328,48 @@
      * Actualiza una tarea
      */
     function updateTask(state, taskId, updates) {
+      let newAssignments = state.assignments;
+      
+      // Si cambia estimateMin, puede que necesitemos ajustar asignaciones
+      if (updates.estimateMin !== undefined) {
+        const taskAssignments = state.assignments.filter(a => a.taskId === taskId);
+        const totalAllocated = taskAssignments.reduce((sum, a) => sum + a.minutes, 0);
+        
+        // Si el nuevo tiempo es menor que lo asignado, recortar asignaciones
+        if (updates.estimateMin < totalAllocated) {
+          let remaining = updates.estimateMin;
+          newAssignments = state.assignments.map(a => {
+            if (a.taskId !== taskId) return a;
+            
+            if (remaining <= 0) {
+              // Esta asignación se elimina (se marcará para filtrar)
+              return { ...a, minutes: 0 };
+            }
+            
+            if (a.minutes <= remaining) {
+              remaining -= a.minutes;
+              return a;
+            } else {
+              // Recortar esta asignación
+              const newMinutes = remaining;
+              remaining = 0;
+              return { ...a, minutes: newMinutes };
+            }
+          }).filter(a => a.minutes > 0); // Eliminar asignaciones con 0 minutos
+        }
+      }
+      
       return {
         ...state,
+        assignments: newAssignments,
         tasks: state.tasks.map(t => {
           if (t.id !== taskId) return t;
           
           const newTask = { ...t, ...updates };
           
-          // Si cambia estimateMin, recalcular remainingMin
+          // Recalcular remainingMin con las asignaciones ajustadas
           if (updates.estimateMin !== undefined) {
-            const allocated = state.assignments
+            const allocated = newAssignments
               .filter(a => a.taskId === taskId)
               .reduce((sum, a) => sum + a.minutes, 0);
             newTask.remainingMin = Math.max(0, updates.estimateMin - allocated);
@@ -1347,6 +1469,9 @@
         const isFullyAssigned = stats.remainingMin === 0;
         const taskHeight = calcHeight(task.estimateMin);
         
+        // Obtener asignaciones de esta tarea
+        const taskAssignments = state.assignments.filter(a => a.taskId === task.id);
+        
         return `
           <div class="card task-card ${task.done ? 'done' : ''} ${isFullyAssigned ? 'fully-assigned' : ''}" 
                data-id="${task.id}" 
@@ -1368,6 +1493,17 @@
                     ${stats.remainingMin > 0 ? `Restante: ${stats.remainingMin} min` : '✓ Asignada'}
                   </span>
                 </div>
+                ${taskAssignments.length > 0 ? `
+                  <div class="task-assignments">
+                    ${taskAssignments.map(a => {
+                      const slot = state.slots.find(s => s.id === a.slotId);
+                      return `<div class="task-assignment-chip">
+                        <span>📍 ${slot ? escapeHtml(slot.title) : '?'} (${a.minutes}m)</span>
+                        <button class="task-assignment-remove" onclick="handleRemoveAssignment('${a.id}')" title="Desasignar">✕</button>
+                      </div>`;
+                    }).join('')}
+                  </div>
+                ` : ''}
               </div>
               <div class="card-actions">
                 ${stats.remainingMin > 0 ? `
@@ -1497,26 +1633,30 @@
         
         const endMin = slot.startMin + slot.durationMin;
         
+        // Calcular altura del header (título + hora + capacidad)
+        const headerHeight = 38; // px aproximados para header
+        const availableHeight = Math.max(0, slotHeight - headerHeight - 20); // 20 para resize handle
+        
         slotEl.innerHTML = `
-          <div class="timeline-slot-title">${escapeHtml(slot.title)}</div>
-          <div class="timeline-slot-time">${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)}</div>
-          ${slotHeight > 50 ? `
-            <div class="timeline-slot-capacity">
-              ${stats.assignedMin}/${slot.durationMin} min (${stats.remainingMin} libres)
-            </div>
-          ` : ''}
-          ${slotHeight > 80 && assignments.length > 0 ? `
-            <div class="timeline-slot-assignments">
-              ${assignments.slice(0, 3).map(a => {
+          <div class="timeline-slot-header">
+            <div class="timeline-slot-title">${escapeHtml(slot.title)}</div>
+            <div class="timeline-slot-time">${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)} · ${stats.assignedMin}/${slot.durationMin}m</div>
+          </div>
+          ${assignments.length > 0 ? `
+            <div class="timeline-slot-assignments" style="height: ${availableHeight}px;">
+              ${assignments.map(a => {
                 const task = state.tasks.find(t => t.id === a.taskId);
-                return `<div class="timeline-slot-assignment">
-                  <span>${task ? escapeHtml(task.title.slice(0, 15)) : '?'}${task && task.title.length > 15 ? '…' : ''} (${a.minutes}m)</span>
+                // Altura proporcional basada en minutos
+                const heightPx = (a.minutes / slot.durationMin) * availableHeight;
+                return `<div class="timeline-slot-assignment" style="height: ${Math.max(14, heightPx)}px;">
+                  <span>${task ? escapeHtml(task.title.slice(0, 25)) : '?'} (${a.minutes}m)</span>
                   <button class="slot-remove-assignment-btn" data-assignment-id="${a.id}">✕</button>
                 </div>`;
               }).join('')}
-              ${assignments.length > 3 ? `<div style="opacity:0.7">+${assignments.length - 3} más</div>` : ''}
             </div>
-          ` : ''}
+          ` : (slotHeight > 60 ? `
+            <div class="timeline-slot-empty">${stats.remainingMin}m libres</div>
+          ` : '')}
           <div class="timeline-slot-actions">
             <button class="slot-edit-btn" data-slot-id="${slot.id}">✏️</button>
             <button class="slot-delete-btn" data-slot-id="${slot.id}">🗑️</button>
@@ -1966,20 +2106,26 @@
         const slot = state.slots.find(s => s.id === slotId);
         const slotStats = getSlotStats(state, slotId);
         
-        if (slot && slotStats.remainingMin > 0) {
-          // Calcular minutos a asignar: mínimo entre restantes de tarea y espacio del slot
-          const minutesToAssign = Math.min(taskDragState.remainingMin, slotStats.remainingMin);
+        if (slot) {
+          // Asignar todos los minutos restantes de la tarea (sin recortar)
+          const minutesToAssign = taskDragState.remainingMin;
+          const taskId = taskDragState.taskId;
           
           try {
-            state = assignTask(state, slotId, taskDragState.taskId, minutesToAssign);
+            state = assignTask(state, slotId, taskId, minutesToAssign);
             save(state);
             render();
-            showToast(`Asignados ${minutesToAssign} min de "${taskDragState.taskTitle}" a "${slot.title}"`, 'success');
+            
+            // Verificar si quedó overbooking y mostrar modal
+            const newSlotStats = getSlotStats(state, slotId);
+            if (newSlotStats.isOverbooked) {
+              showOverbookingModal(slotId, taskId, minutesToAssign, -newSlotStats.remainingMin);
+            } else {
+              showToast(`Asignados ${minutesToAssign} min de "${taskDragState.taskTitle}" a "${slot.title}"`, 'success');
+            }
           } catch (err) {
             showToast(err.message, 'error');
           }
-        } else {
-          showToast('Este hueco está lleno', 'error');
         }
       } else if (taskDragState) {
         // Detectar reordenamiento dentro de la lista
@@ -2150,18 +2296,24 @@
         return;
       }
       
+      const slotId = activePopupSlotId;
+      
       try {
-        state = assignTask(state, activePopupSlotId, taskId, minutes);
+        state = assignTask(state, slotId, taskId, minutes);
         save(state);
         render();
         
-        // Reabrir popup actualizado
-        const slotEl = document.querySelector(`.timeline-slot[data-id="${activePopupSlotId}"]`);
-        if (slotEl) {
-          openSlotPopup(activePopupSlotId, slotEl);
-        }
+        // Verificar si quedó overbooking
+        const slotStats = getSlotStats(state, slotId);
         
-        showToast('Tarea asignada', 'success');
+        // Cerrar popup
+        closeSlotPopup();
+        
+        if (slotStats.isOverbooked) {
+          showOverbookingModal(slotId, taskId, minutes, -slotStats.remainingMin);
+        } else {
+          showToast('Tarea asignada', 'success');
+        }
       } catch (e) {
         showToast(e.message, 'error');
       }
@@ -2188,6 +2340,78 @@
     document.getElementById('timelineEnd').addEventListener('change', (e) => {
       timelineEndMin = parseTimeToMin(e.target.value);
       renderSlots();
+    });
+
+    // ========== OVERBOOKING MODAL ==========
+    
+    let overbookingContext = null;
+    
+    /**
+     * Muestra el modal de overbooking con opciones
+     */
+    function showOverbookingModal(slotId, taskId, minutesAssigned, excessMin) {
+      const slot = state.slots.find(s => s.id === slotId);
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!slot || !task) return;
+      
+      const slotStats = getSlotStats(state, slotId);
+      const newSlotDuration = slot.durationMin + excessMin;
+      const newTaskDuration = task.estimateMin - excessMin;
+      
+      overbookingContext = { slotId, taskId, excessMin, newSlotDuration, newTaskDuration };
+      
+      document.getElementById('overbookingInfo').innerHTML = `
+        Has asignado <strong>${minutesAssigned} min</strong> de "${escapeHtml(task.title)}" 
+        al hueco "${escapeHtml(slot.title)}".<br><br>
+        El hueco está <strong>excedido por ${excessMin} min</strong>.
+      `;
+      document.getElementById('overbookingNewSlotDuration').textContent = newSlotDuration;
+      document.getElementById('overbookingNewTaskDuration').textContent = newTaskDuration;
+      
+      document.getElementById('overbookingModal').classList.add('show');
+    }
+    
+    function closeOverbookingModal() {
+      overbookingContext = null;
+      document.getElementById('overbookingModal').classList.remove('show');
+    }
+    
+    // Botón: Ampliar hueco
+    document.getElementById('overbookingExpandSlot').addEventListener('click', () => {
+      if (!overbookingContext) return;
+      
+      state = updateSlot(state, overbookingContext.slotId, { 
+        durationMin: overbookingContext.newSlotDuration 
+      });
+      save(state);
+      render();
+      closeOverbookingModal();
+      showToast('Hueco ampliado', 'success');
+    });
+    
+    // Botón: Reducir tarea
+    document.getElementById('overbookingReduceTask').addEventListener('click', () => {
+      if (!overbookingContext) return;
+      
+      state = updateTask(state, overbookingContext.taskId, { 
+        estimateMin: overbookingContext.newTaskDuration 
+      });
+      save(state);
+      render();
+      closeOverbookingModal();
+      showToast('Tarea ajustada', 'success');
+    });
+    
+    // Botón: No hacer nada
+    document.getElementById('overbookingDoNothing').addEventListener('click', () => {
+      closeOverbookingModal();
+    });
+    
+    // Cerrar al hacer click fuera
+    document.getElementById('overbookingModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('overbookingModal')) {
+        closeOverbookingModal();
+      }
     });
 
     /**
@@ -2365,21 +2589,21 @@
         return;
       }
       
-      // Comprobar si hay warning
-      const task = state.tasks.find(t => t.id === editingTaskId);
+      // Comprobar si hay asignaciones que se recortarán
       const allocated = state.assignments
         .filter(a => a.taskId === editingTaskId)
         .reduce((sum, a) => sum + a.minutes, 0);
-      
-      if (estimateMin < allocated) {
-        showToast(`Atención: Ya hay ${allocated} min asignados`, 'error');
-      }
       
       state = updateTask(state, editingTaskId, { title, estimateMin });
       save(state);
       render();
       closeEditTask();
-      showToast('Tarea actualizada', 'success');
+      
+      if (estimateMin < allocated) {
+        showToast(`Asignaciones ajustadas de ${allocated} a ${estimateMin} min`, 'info');
+      } else {
+        showToast('Tarea actualizada', 'success');
+      }
     }
 
     function openEditSlot(slotId) {

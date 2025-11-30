@@ -11,6 +11,8 @@
 - **Filtrar tareas** por estado: Pendientes, Hechas o Todas
 - **Reordenar tareas** arrastrándolas en la lista
 - **Altura proporcional**: Las tarjetas de tareas tienen altura proporcional a su duración
+- **Ver asignaciones**: Cada tarea muestra a qué huecos está asignada con chips interactivos
+- **Desasignar desde tarea**: Botón ✕ en cada chip para eliminar la asignación
 
 ### Gestión de Huecos (Bloques de Tiempo)
 - **Crear huecos** con título, hora de inicio y duración
@@ -20,14 +22,20 @@
 - **Editar y eliminar** huecos existentes
 - **Indicador de hora actual**: Línea roja que muestra la hora actual
 - **Rango configurable**: Ajustar las horas de inicio y fin del timeline
+- **Tareas proporcionales**: Las tareas asignadas ocupan espacio visual proporcional a su duración
 
 ### Asignación de Tareas a Huecos
 - **Asignar tareas** a huecos de tiempo de dos formas:
   1. Haciendo clic en el hueco y seleccionando la tarea
   2. **Arrastrando la tarea** directamente sobre el hueco
-- **Control de capacidad**: Cada hueco muestra minutos asignados vs disponibles
+- **Asignación completa**: Al arrastrar, se asigna toda la tarea (sin recortar)
+- **Control de overbooking**: Si el hueco queda excedido, aparece un modal con opciones:
+  - 📐 Ampliar el hueco para que quepa la tarea
+  - ✂️ Ajustar la duración de la tarea
+  - ⏭️ Dejar así y ajustar después manualmente
 - **Asignaciones parciales**: Una tarea puede dividirse entre varios huecos
 - **Indicador visual**: Las tareas completamente asignadas se marcan con ✓
+- **Ajuste automático**: Al editar la duración de una tarea, las asignaciones se ajustan proporcionalmente
 
 ### Persistencia
 - **Almacenamiento local**: Todos los datos se guardan en localStorage
@@ -50,6 +58,12 @@
 - **Escala visual**: 1.5 píxeles por minuto
 - **Grid horario**: Líneas cada hora para referencia visual
 - **Slots interactivos**: Los huecos muestran título, horario, capacidad y tareas asignadas
+- **Altura proporcional**: Cada tarea asignada ocupa espacio proporcional a sus minutos
+
+### Tarjetas de Tareas
+- **Información completa**: Título, duración estimada, tiempo restante
+- **Chips de asignaciones**: Muestran a qué huecos está asignada cada tarea
+- **Acciones rápidas**: Asignar, editar, eliminar y desasignar
 
 ## 🛠️ Tecnologías
 
@@ -83,6 +97,7 @@ horariodia/
 3. Crea huecos de tiempo indicando título, hora y duración
 4. Asigna tareas a los huecos arrastrándolas o haciendo clic
 5. Reorganiza tareas y huecos según necesites
+6. Si un hueco queda excedido, elige cómo resolverlo en el modal
 
 ## 📱 Instalación como PWA
 
