@@ -937,6 +937,223 @@
     .pomodoro-badge .pom-icon {
       font-size: 0.9em;
     }
+    
+    /* ========== VISTA DE CONEXIONES (CHORD VIEW) ========== */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+    
+    .view-toggle button {
+      padding: 6px 12px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      color: white;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    
+    .view-toggle button.active {
+      background: white;
+      color: var(--primary);
+    }
+    
+    .view-toggle button:hover:not(.active) {
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .chord-view {
+      display: none;
+      padding: 16px;
+      background: var(--gray-100);
+      min-height: calc(100vh - 140px);
+    }
+    
+    .chord-view.active {
+      display: block;
+    }
+    
+    .main.hidden {
+      display: none;
+    }
+    
+    .chord-container {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+    }
+    
+    .chord-column {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .chord-column-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      background: var(--gray-200);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .chord-item {
+      background: white;
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 40px;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    
+    .chord-item:hover {
+      transform: translateX(2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .chord-task {
+      border-left: 4px solid var(--primary);
+    }
+    
+    .chord-task.done {
+      opacity: 0.5;
+      border-left-color: var(--gray-500);
+    }
+    
+    .chord-task.fully-assigned {
+      border-left-color: var(--success);
+    }
+    
+    .chord-slot {
+      border-right: 4px solid var(--warning);
+    }
+    
+    .chord-slot.overbooked {
+      border-right-color: var(--danger);
+    }
+    
+    .chord-item-title {
+      font-weight: 500;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .chord-item-meta {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    
+    .chord-svg-container {
+      position: relative;
+      overflow: visible;
+    }
+    
+    .chord-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    
+    .chord-path {
+      fill: none;
+      stroke-width: 2;
+      opacity: 0.6;
+      transition: opacity 0.2s, stroke-width 0.2s;
+      pointer-events: stroke;
+    }
+    
+    .chord-path:hover {
+      opacity: 1;
+      stroke-width: 4;
+    }
+    
+    /* Colores para las conexiones */
+    .chord-path.color-0 { stroke: #4a90d9; }
+    .chord-path.color-1 { stroke: #27ae60; }
+    .chord-path.color-2 { stroke: #e74c3c; }
+    .chord-path.color-3 { stroke: #f39c12; }
+    .chord-path.color-4 { stroke: #9b59b6; }
+    .chord-path.color-5 { stroke: #1abc9c; }
+    .chord-path.color-6 { stroke: #e67e22; }
+    .chord-path.color-7 { stroke: #3498db; }
+    
+    /* Botón de desasignar en conexiones */
+    .chord-unassign-btn {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: white;
+      border: 2px solid white;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.1s;
+      z-index: 10;
+    }
+    
+    .chord-unassign-btn:hover {
+      transform: scale(1.2);
+    }
+    
+    /* Drag & drop en chord view */
+    .chord-task.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+    
+    .chord-task[draggable="true"] {
+      cursor: grab;
+    }
+    
+    .chord-task[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    
+    .chord-slot.drag-over {
+      background: var(--primary);
+      color: white;
+      transform: scale(1.02);
+    }
+    
+    .chord-slot.drag-over .chord-item-title,
+    .chord-slot.drag-over .chord-item-meta {
+      color: white;
+    }
+    
+    @media (max-width: 768px) {
+      .chord-container {
+        grid-template-columns: 1fr 80px 1fr;
+      }
+      
+      .chord-item {
+        padding: 6px 8px;
+      }
+      
+      .chord-item-title {
+        font-size: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -946,6 +1163,10 @@
       <div>
         <h1>🗓️ Huecos & Tareas</h1>
         <div class="day-label" id="dayLabel">Hoy: --</div>
+      </div>
+      <div class="view-toggle">
+        <button id="viewNormal" class="active">📋 Normal</button>
+        <button id="viewChord">🔗 Conexiones</button>
       </div>
     </div>
     <div class="header-actions">
@@ -1023,6 +1244,21 @@
       </div>
     </section>
   </main>
+
+  <!-- VISTA DE CONEXIONES -->
+  <div class="chord-view" id="chordView">
+    <div class="chord-container" id="chordContainer">
+      <div class="chord-column" id="chordTasks">
+        <div class="chord-column-title">📋 Tareas</div>
+      </div>
+      <div class="chord-svg-container" id="chordSvgContainer">
+        <svg class="chord-svg" id="chordSvg"></svg>
+      </div>
+      <div class="chord-column" id="chordSlots">
+        <div class="chord-column-title">⏰ Huecos</div>
+      </div>
+    </div>
+  </div>
 
   <!-- SLOT POPUP -->
   <div class="slot-popup hidden" id="slotPopup">
@@ -2670,6 +2906,284 @@
       }
     });
 
+    // ========== VISTA DE CONEXIONES (CHORD VIEW) ==========
+    
+    let currentView = 'normal'; // 'normal' o 'chord'
+    
+    function switchView(view) {
+      currentView = view;
+      const mainEl = document.querySelector('.main');
+      const chordEl = document.getElementById('chordView');
+      const btnNormal = document.getElementById('viewNormal');
+      const btnChord = document.getElementById('viewChord');
+      
+      if (view === 'chord') {
+        mainEl.classList.add('hidden');
+        chordEl.classList.add('active');
+        btnNormal.classList.remove('active');
+        btnChord.classList.add('active');
+        renderChordView();
+      } else {
+        mainEl.classList.remove('hidden');
+        chordEl.classList.remove('active');
+        btnNormal.classList.add('active');
+        btnChord.classList.remove('active');
+      }
+    }
+    
+    function renderChordView() {
+      const tasksContainer = document.getElementById('chordTasks');
+      const slotsContainer = document.getElementById('chordSlots');
+      const svgContainer = document.getElementById('chordSvgContainer');
+      const svg = document.getElementById('chordSvg');
+      
+      // Escala: pixels por pomodoro
+      const PIXELS_PER_POMODORO = 50;
+      const MIN_HEIGHT = 40;
+      
+      // Ordenar tareas según su orden en la lista (filtrar solo pendientes)
+      const tasks = state.tasks.filter(t => !t.done);
+      
+      // Ordenar slots por hora
+      const slots = [...state.slots].sort((a, b) => a.startMin - b.startMin);
+      
+      // Calcular alturas
+      const taskHeights = tasks.map(t => {
+        const poms = minToPomodoros(t.estimateMin);
+        return Math.max(MIN_HEIGHT, poms * PIXELS_PER_POMODORO);
+      });
+      
+      const slotHeights = slots.map(s => {
+        const poms = minToPomodoros(s.durationMin);
+        return Math.max(MIN_HEIGHT, poms * PIXELS_PER_POMODORO);
+      });
+      
+      // Calcular posiciones Y acumuladas
+      const taskPositions = [];
+      let taskY = 40; // Después del título
+      tasks.forEach((t, i) => {
+        taskPositions.push({ top: taskY, height: taskHeights[i], center: taskY + taskHeights[i] / 2 });
+        taskY += taskHeights[i] + 4; // gap
+      });
+      
+      const slotPositions = [];
+      let slotY = 40;
+      slots.forEach((s, i) => {
+        slotPositions.push({ top: slotY, height: slotHeights[i], center: slotY + slotHeights[i] / 2 });
+        slotY += slotHeights[i] + 4;
+      });
+      
+      // Altura total del contenedor
+      const totalHeight = Math.max(taskY, slotY) + 20;
+      
+      // Renderizar tareas (con draggable si tienen tiempo restante)
+      tasksContainer.innerHTML = `
+        <div class="chord-column-title">📋 Tareas</div>
+        ${tasks.map((task, i) => {
+          const stats = getTaskStats(state, task.id);
+          const isFullyAssigned = stats.remainingMin === 0;
+          const canDrag = stats.remainingMin > 0;
+          const poms = minToPomodoros(task.estimateMin);
+          return `
+            <div class="chord-item chord-task ${task.done ? 'done' : ''} ${isFullyAssigned ? 'fully-assigned' : ''}" 
+                 data-task-id="${task.id}"
+                 draggable="${canDrag}"
+                 style="height: ${taskHeights[i]}px;">
+              <div class="chord-item-title">${escapeHtml(task.title)}</div>
+              <div class="chord-item-meta">${poms.toFixed(1)} 🍅 ${isFullyAssigned ? '✓' : `(${formatDuration(stats.remainingMin)} libre)`}</div>
+            </div>
+          `;
+        }).join('')}
+      `;
+      
+      // Renderizar slots
+      slotsContainer.innerHTML = `
+        <div class="chord-column-title">⏰ Huecos</div>
+        ${slots.map((slot, i) => {
+          const stats = getSlotStats(state, slot.id);
+          const poms = minToPomodoros(slot.durationMin);
+          return `
+            <div class="chord-item chord-slot ${stats.isOverbooked ? 'overbooked' : ''}" 
+                 data-slot-id="${slot.id}"
+                 style="height: ${slotHeights[i]}px;">
+              <div class="chord-item-title">${escapeHtml(slot.title)}</div>
+              <div class="chord-item-meta">${formatMinToTime(slot.startMin)} · ${poms.toFixed(1)} 🍅</div>
+            </div>
+          `;
+        }).join('')}
+      `;
+      
+      // Configurar SVG
+      svgContainer.style.height = totalHeight + 'px';
+      svg.setAttribute('viewBox', `0 0 120 ${totalHeight}`);
+      svg.style.height = totalHeight + 'px';
+      
+      // Dibujar conexiones (curvas bezier)
+      let pathsHtml = '';
+      let colorIndex = 0;
+      
+      // También guardar info para botones de desasignar
+      const unassignButtons = [];
+      
+      state.assignments.forEach(assignment => {
+        const taskIndex = tasks.findIndex(t => t.id === assignment.taskId);
+        const slotIndex = slots.findIndex(s => s.id === assignment.slotId);
+        
+        if (taskIndex === -1 || slotIndex === -1) return;
+        
+        const taskPos = taskPositions[taskIndex];
+        const slotPos = slotPositions[slotIndex];
+        
+        // Puntos de la curva
+        const x1 = 0;
+        const y1 = taskPos.center;
+        const x2 = 120;
+        const y2 = slotPos.center;
+        
+        // Puntos de control para curva bezier suave
+        const cx1 = 50;
+        const cx2 = 70;
+        
+        // Grosor proporcional a los minutos asignados
+        const strokeWidth = Math.max(2, Math.min(8, assignment.minutes / 10));
+        
+        pathsHtml += `
+          <path class="chord-path color-${colorIndex % 8}" 
+                d="M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}"
+                stroke-width="${strokeWidth}"
+                data-task="${assignment.taskId}"
+                data-slot="${assignment.slotId}">
+            <title>${tasks[taskIndex].title} → ${slots[slotIndex].title} (${formatDuration(assignment.minutes)})</title>
+          </path>
+        `;
+        
+        // Guardar posición para botón de desasignar (en el lado de la tarea)
+        unassignButtons.push({
+          id: assignment.id,
+          x: 8, // cerca del borde izquierdo del SVG
+          y: y1
+        });
+        
+        colorIndex++;
+      });
+      
+      svg.innerHTML = pathsHtml;
+      
+      // Añadir botones de desasignar como elementos HTML (más fácil de manejar que SVG)
+      // Primero eliminar los botones existentes
+      svgContainer.querySelectorAll('.chord-unassign-btn').forEach(btn => btn.remove());
+      
+      unassignButtons.forEach(btn => {
+        const button = document.createElement('button');
+        button.className = 'chord-unassign-btn';
+        button.innerHTML = '✕';
+        button.title = 'Desasignar';
+        button.style.left = '-10px';
+        button.style.top = (btn.y - 10) + 'px';
+        button.dataset.assignmentId = btn.id;
+        button.addEventListener('click', () => {
+          handleRemoveAssignment(btn.id);
+        });
+        svgContainer.appendChild(button);
+      });
+      
+      // Setup drag & drop para la vista chord
+      setupChordDragDrop();
+    }
+    
+    function setupChordDragDrop() {
+      const tasksContainer = document.getElementById('chordTasks');
+      const slotsContainer = document.getElementById('chordSlots');
+      
+      let draggedTaskId = null;
+      
+      // Drag start en tareas
+      tasksContainer.addEventListener('dragstart', (e) => {
+        const taskEl = e.target.closest('.chord-task');
+        if (!taskEl) return;
+        
+        draggedTaskId = taskEl.dataset.taskId;
+        taskEl.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedTaskId);
+      });
+      
+      tasksContainer.addEventListener('dragend', (e) => {
+        const taskEl = e.target.closest('.chord-task');
+        if (taskEl) {
+          taskEl.classList.remove('dragging');
+        }
+        draggedTaskId = null;
+        
+        // Limpiar drag-over de todos los slots
+        slotsContainer.querySelectorAll('.chord-slot').forEach(slot => {
+          slot.classList.remove('drag-over');
+        });
+      });
+      
+      // Drag over/enter/leave/drop en slots
+      slotsContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      
+      slotsContainer.addEventListener('dragenter', (e) => {
+        const slotEl = e.target.closest('.chord-slot');
+        if (slotEl) {
+          slotEl.classList.add('drag-over');
+        }
+      });
+      
+      slotsContainer.addEventListener('dragleave', (e) => {
+        const slotEl = e.target.closest('.chord-slot');
+        if (slotEl && !slotEl.contains(e.relatedTarget)) {
+          slotEl.classList.remove('drag-over');
+        }
+      });
+      
+      slotsContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        
+        const slotEl = e.target.closest('.chord-slot');
+        if (!slotEl || !draggedTaskId) return;
+        
+        slotEl.classList.remove('drag-over');
+        
+        const slotId = slotEl.dataset.slotId;
+        const taskId = draggedTaskId;
+        
+        // Obtener tiempo restante de la tarea
+        const taskStats = getTaskStats(state, taskId);
+        if (taskStats.remainingMin <= 0) {
+          showToast('Esta tarea ya está completamente asignada', 'error');
+          return;
+        }
+        
+        // Asignar todo el tiempo restante
+        const minutesToAssign = taskStats.remainingMin;
+        
+        try {
+          state = assignTask(state, slotId, taskId, minutesToAssign);
+          save(state);
+          render();
+          
+          // Verificar si quedó overbooking
+          const slotStats = getSlotStats(state, slotId);
+          if (slotStats.isOverbooked) {
+            showOverbookingModal(slotId, taskId, minutesToAssign, -slotStats.remainingMin);
+          } else {
+            showToast('Tarea asignada', 'success');
+          }
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      });
+    }
+    
+    // Event listeners para cambio de vista
+    document.getElementById('viewNormal').addEventListener('click', () => switchView('normal'));
+    document.getElementById('viewChord').addEventListener('click', () => switchView('chord'));
+
     /**
      * Renderiza todo
      */
@@ -2680,6 +3194,11 @@
       
       renderTasks();
       renderSlots();
+      
+      // Si estamos en vista chord, actualizarla también
+      if (currentView === 'chord') {
+        renderChordView();
+      }
     }
 
     /**

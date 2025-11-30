@@ -58,10 +58,27 @@
 
 ## 🖥️ Interfaz
 
-### Layout
-- **Diseño responsive**: Una columna en móvil, dos columnas en escritorio
+### Vistas disponibles
+La aplicación ofrece dos vistas alternativas accesibles desde el header:
+
+#### Vista Normal (📋)
 - **Panel izquierdo**: Formularios y lista de tareas
 - **Panel derecho**: Timeline visual con huecos de tiempo
+- Ideal para gestión detallada
+
+#### Vista de Conexiones (🔗)
+- **Visualización tipo chord/diagrama de flujo**
+- **Columna izquierda**: Tareas pendientes (ordenadas manualmente)
+- **Columna derecha**: Huecos (ordenados por hora)
+- **Curvas SVG**: Conectan visualmente tareas con sus huecos asignados
+- **Alturas proporcionales**: Cada elemento tiene altura según su duración en pomodoros
+- **Drag & Drop**: Arrastra tareas hacia los huecos para asignarlas
+- **Botones de desasignar (✕)**: En cada conexión, junto a la tarea
+- Ideal para visión global de asignaciones
+
+### Layout General
+- **Diseño responsive**: Una columna en móvil, dos columnas en escritorio
+- **Toggle de vistas**: Botones en el header para cambiar entre Normal y Conexiones
 
 ### Timeline
 - **Escala visual**: 1.5 píxeles por minuto
@@ -79,6 +96,7 @@
 - **HTML5**: Estructura semántica
 - **CSS3**: Variables CSS, Flexbox, Grid
 - **JavaScript vanilla**: Sin frameworks ni dependencias
+- **SVG**: Para las curvas de conexión en la vista chord
 - **LocalStorage API**: Persistencia de datos
 - **Service Workers**: Funcionamiento offline
 - **Web App Manifest**: Instalación como PWA
@@ -107,6 +125,7 @@ horariodia/
 4. Asigna tareas a los huecos arrastrándolas o haciendo clic
 5. Reorganiza tareas y huecos según necesites
 6. Si un hueco queda excedido, elige cómo resolverlo en el modal
+7. Usa la vista de Conexiones (🔗) para ver una visión global
 
 ## 📱 Instalación como PWA
 
