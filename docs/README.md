@@ -5,7 +5,7 @@
 ## 🎯 Características principales
 
 ### Gestión de Tareas
-- **Crear tareas** con título y duración estimada en minutos
+- **Crear tareas** con título y duración estimada en minutos o pomodoros
 - **Editar y eliminar** tareas existentes
 - **Marcar como completadas** mediante checkbox
 - **Filtrar tareas** por estado: Pendientes, Hechas o Todas
@@ -36,6 +36,13 @@
 - **Asignaciones parciales**: Una tarea puede dividirse entre varios huecos
 - **Indicador visual**: Las tareas completamente asignadas se marcan con ✓
 - **Ajuste automático**: Al editar la duración de una tarea, las asignaciones se ajustan proporcionalmente
+
+### Sistema de Pomodoros 🍅
+- **Duración configurable**: Define cuántos minutos tiene un pomodoro (default: 25 min)
+- **Toggle de unidades**: Alterna entre mostrar tiempos en minutos o en pomodoros
+- **Conversión automática**: Toda la interfaz se adapta al modo seleccionado
+- **Inputs inteligentes**: Los formularios aceptan valores en la unidad actual
+- **Persistencia**: La configuración se guarda en localStorage
 
 ### Persistencia
 - **Almacenamiento local**: Todos los datos se guardan en localStorage
