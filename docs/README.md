@@ -35,7 +35,9 @@
   - ⏭️ Dejar así y ajustar después manualmente
 - **Asignaciones parciales**: Una tarea puede dividirse entre varios huecos
 - **Indicador visual**: Las tareas completamente asignadas se marcan con ✓
-- **Ajuste automático**: Al editar la duración de una tarea, las asignaciones se ajustan proporcionalmente
+- **Ajuste automático de asignaciones**: 
+  - Al **reducir** la duración de una tarea, las asignaciones se recortan para no exceder el nuevo tiempo
+  - Al **ampliar** la duración, las asignaciones crecen proporcionalmente (respetando la capacidad del hueco)
 
 ### Sistema de Pomodoros 🍅
 - **Duración configurable**: Define cuántos minutos tiene un pomodoro (default: 25 min)

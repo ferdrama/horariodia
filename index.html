@@ -1552,21 +1552,24 @@
      * Actualiza una tarea
      */
     function updateTask(state, taskId, updates) {
-      let newAssignments = state.assignments;
+      // Siempre creamos una copia fresca de las asignaciones
+      let newAssignments = state.assignments.map(a => ({ ...a }));
       
       // Si cambia estimateMin, puede que necesitemos ajustar asignaciones
       if (updates.estimateMin !== undefined) {
-        const taskAssignments = state.assignments.filter(a => a.taskId === taskId);
+        const task = state.tasks.find(t => t.id === taskId);
+        const oldEstimate = task ? task.estimateMin : 0;
+        const newEstimate = updates.estimateMin;
+        const taskAssignments = newAssignments.filter(a => a.taskId === taskId);
         const totalAllocated = taskAssignments.reduce((sum, a) => sum + a.minutes, 0);
         
-        // Si el nuevo tiempo es menor que lo asignado, recortar asignaciones
-        if (updates.estimateMin < totalAllocated) {
-          let remaining = updates.estimateMin;
-          newAssignments = state.assignments.map(a => {
+        if (newEstimate < totalAllocated) {
+          // REDUCIR: recortar asignaciones para que no excedan el nuevo tiempo
+          let remaining = newEstimate;
+          newAssignments = newAssignments.map(a => {
             if (a.taskId !== taskId) return a;
             
             if (remaining <= 0) {
-              // Esta asignación se elimina (se marcará para filtrar)
               return { ...a, minutes: 0 };
             }
             
@@ -1574,12 +1577,33 @@
               remaining -= a.minutes;
               return a;
             } else {
-              // Recortar esta asignación
               const newMinutes = remaining;
               remaining = 0;
               return { ...a, minutes: newMinutes };
             }
-          }).filter(a => a.minutes > 0); // Eliminar asignaciones con 0 minutos
+          }).filter(a => a.minutes > 0);
+        } else if (newEstimate > oldEstimate && totalAllocated > 0) {
+          // AMPLIAR: expandir asignaciones proporcionalmente (si hay espacio en los huecos)
+          const ratio = newEstimate / oldEstimate;
+          
+          newAssignments = newAssignments.map(a => {
+            if (a.taskId !== taskId) return a;
+            
+            const slot = state.slots.find(s => s.id === a.slotId);
+            if (!slot) return a;
+            
+            // Calcular espacio disponible en el hueco (excluyendo esta asignación)
+            const otherAssignmentsInSlot = newAssignments
+              .filter(other => other.slotId === a.slotId && other.id !== a.id)
+              .reduce((sum, other) => sum + other.minutes, 0);
+            const availableInSlot = slot.durationMin - otherAssignmentsInSlot;
+            
+            // Calcular nuevo tiempo proporcional, limitado por espacio disponible
+            const proportionalMinutes = Math.round(a.minutes * ratio);
+            const newMinutes = Math.min(proportionalMinutes, availableInSlot);
+            
+            return { ...a, minutes: newMinutes };
+          });
         }
       }
       
