@@ -927,6 +927,68 @@
       font-weight: 500;
     }
     
+    /* ========== RESUMEN DE TAREAS ========== */
+    .tasks-summary {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.15);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      color: white;
+      flex-wrap: wrap;
+    }
+    
+    .tasks-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .tasks-summary-item .label {
+      opacity: 0.9;
+    }
+    
+    .tasks-summary-item .value {
+      font-weight: 600;
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    
+    .tasks-summary-item .hint {
+      opacity: 0.7;
+      font-size: 0.8em;
+    }
+    
+    .tasks-summary-item .value.unassigned-time {
+      background: rgba(231, 76, 60, 0.5);
+    }
+    
+    .tasks-summary-item .value.unassigned-time.all-assigned {
+      background: rgba(39, 174, 96, 0.5);
+    }
+    
+    .tasks-summary-item .value.slots-total {
+      background: rgba(74, 144, 217, 0.3);
+    }
+    
+    .tasks-summary-item .value.available-time {
+      background: rgba(46, 204, 113, 0.5);
+    }
+    
+    .tasks-summary-item .value.available-time.none-available {
+      background: rgba(231, 76, 60, 0.5);
+    }
+    
+    .tasks-summary-separator {
+      width: 1px;
+      height: 20px;
+      background: rgba(255,255,255,0.3);
+    }
+    
     .pomodoro-badge {
       display: inline-flex;
       align-items: center;
@@ -1058,6 +1120,57 @@
       margin-top: 2px;
     }
     
+    .chord-slot-capacity {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      margin-top: 4px;
+    }
+    
+    .chord-slot-bar {
+      height: 6px;
+      background: var(--gray-200);
+      border-radius: 3px;
+      margin-top: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .chord-slot-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .chord-slot-bar-fill.normal {
+      background: linear-gradient(90deg, var(--success), var(--primary));
+    }
+    
+    .chord-slot-bar-fill.warning {
+      background: linear-gradient(90deg, var(--warning), var(--warning));
+    }
+    
+    .chord-slot-bar-fill.overbooked {
+      background: linear-gradient(90deg, var(--danger), #c0392b);
+    }
+    
+    /* Colores para slots y sus conexiones */
+    .chord-slot-bar-fill.slot-color-0, .chord-slot.slot-color-0 { --slot-color: #4a90d9; }
+    .chord-slot-bar-fill.slot-color-1, .chord-slot.slot-color-1 { --slot-color: #27ae60; }
+    .chord-slot-bar-fill.slot-color-2, .chord-slot.slot-color-2 { --slot-color: #e74c3c; }
+    .chord-slot-bar-fill.slot-color-3, .chord-slot.slot-color-3 { --slot-color: #f39c12; }
+    .chord-slot-bar-fill.slot-color-4, .chord-slot.slot-color-4 { --slot-color: #9b59b6; }
+    .chord-slot-bar-fill.slot-color-5, .chord-slot.slot-color-5 { --slot-color: #1abc9c; }
+    .chord-slot-bar-fill.slot-color-6, .chord-slot.slot-color-6 { --slot-color: #e67e22; }
+    .chord-slot-bar-fill.slot-color-7, .chord-slot.slot-color-7 { --slot-color: #3498db; }
+    
+    .chord-slot-bar-fill[class*="slot-color-"] {
+      background: var(--slot-color) !important;
+    }
+    
+    .chord-slot[class*="slot-color-"] {
+      border-right-color: var(--slot-color);
+    }
+    
     .chord-svg-container {
       position: relative;
       overflow: visible;
@@ -1082,15 +1195,15 @@
       stroke-width: 4;
     }
     
-    /* Colores para las conexiones */
-    .chord-path.color-0 { stroke: #4a90d9; }
-    .chord-path.color-1 { stroke: #27ae60; }
-    .chord-path.color-2 { stroke: #e74c3c; }
-    .chord-path.color-3 { stroke: #f39c12; }
-    .chord-path.color-4 { stroke: #9b59b6; }
-    .chord-path.color-5 { stroke: #1abc9c; }
-    .chord-path.color-6 { stroke: #e67e22; }
-    .chord-path.color-7 { stroke: #3498db; }
+    /* Colores para las conexiones (basados en slot) */
+    .chord-path.slot-color-0 { stroke: #4a90d9; }
+    .chord-path.slot-color-1 { stroke: #27ae60; }
+    .chord-path.slot-color-2 { stroke: #e74c3c; }
+    .chord-path.slot-color-3 { stroke: #f39c12; }
+    .chord-path.slot-color-4 { stroke: #9b59b6; }
+    .chord-path.slot-color-5 { stroke: #1abc9c; }
+    .chord-path.slot-color-6 { stroke: #e67e22; }
+    .chord-path.slot-color-7 { stroke: #3498db; }
     
     /* Botón de desasignar en conexiones */
     .chord-unassign-btn {
@@ -1185,6 +1298,22 @@
       <div class="unit-toggle">
         <button id="unitMin" class="active">Minutos</button>
         <button id="unitPom">Pomodoros</button>
+      </div>
+    </div>
+    <div class="tasks-summary" id="tasksSummary">
+      <div class="tasks-summary-item">
+        <span class="label">📋 Tareas:</span>
+        <span class="value" id="summaryTasks">0/0</span>
+        <span class="value unassigned-time" id="summaryUnassignedTime">0m</span>
+        <span class="hint">pendiente</span>
+      </div>
+      <div class="tasks-summary-separator"></div>
+      <div class="tasks-summary-item">
+        <span class="label">⏰ Huecos:</span>
+        <span class="value" id="summarySlotsUsed">0m</span>
+        <span class="hint">/</span>
+        <span class="value slots-total" id="summarySlotsTotal">0m</span>
+        <span class="value available-time" id="summarySlotsAvailable">0m libre</span>
       </div>
     </div>
   </header>
@@ -1552,6 +1681,52 @@
       // Actualizar botones de toggle
       document.getElementById('unitMin').classList.toggle('active', !pomodoroConfig.showAsPomodoros);
       document.getElementById('unitPom').classList.toggle('active', pomodoroConfig.showAsPomodoros);
+    }
+    
+    /**
+     * Actualiza el resumen de tareas en la cabecera
+     */
+    function updateTasksSummary() {
+      const pendingTasks = state.tasks.filter(t => !t.done);
+      const totalTasks = pendingTasks.length;
+      
+      // Tareas completamente asignadas
+      const assignedCount = pendingTasks.filter(t => {
+        const stats = getTaskStats(state, t.id);
+        return stats.remainingMin === 0;
+      }).length;
+      
+      // Tiempo sin asignar
+      const unassignedMinutes = pendingTasks.reduce((sum, t) => {
+        const stats = getTaskStats(state, t.id);
+        return sum + stats.remainingMin;
+      }, 0);
+      
+      // Tiempo de huecos
+      const totalSlotsMinutes = state.slots.reduce((sum, s) => sum + s.durationMin, 0);
+      const usedSlotsMinutes = state.assignments.reduce((sum, a) => sum + a.minutes, 0);
+      const availableSlotsMinutes = Math.max(0, totalSlotsMinutes - usedSlotsMinutes);
+      
+      // Formatear tiempo compacto
+      const fmt = (min) => {
+        const poms = minToPomodoros(min);
+        const p = Number.isInteger(poms) ? poms : poms.toFixed(1);
+        return `${min}m/${p}🍅`;
+      };
+      
+      // Actualizar elementos
+      document.getElementById('summaryTasks').textContent = `${assignedCount}/${totalTasks}`;
+      
+      const unassignedEl = document.getElementById('summaryUnassignedTime');
+      unassignedEl.textContent = fmt(unassignedMinutes);
+      unassignedEl.classList.toggle('all-assigned', unassignedMinutes === 0);
+      
+      document.getElementById('summarySlotsUsed').textContent = fmt(usedSlotsMinutes);
+      document.getElementById('summarySlotsTotal').textContent = fmt(totalSlotsMinutes);
+      
+      const availableEl = document.getElementById('summarySlotsAvailable');
+      availableEl.textContent = `${fmt(availableSlotsMinutes)} libre`;
+      availableEl.classList.toggle('none-available', availableSlotsMinutes === 0);
     }
 
     // ========== ESTADO ==========
@@ -2939,7 +3114,8 @@
       
       // Escala: pixels por pomodoro
       const PIXELS_PER_POMODORO = 50;
-      const MIN_HEIGHT = 40;
+      const MIN_HEIGHT_TASK = 60; // Mínimo para tareas (para que se lea el texto)
+      const MIN_HEIGHT_SLOT = 80; // Mínimo para slots (incluye barra de capacidad)
       
       // Ordenar tareas según su orden en la lista (filtrar solo pendientes)
       const tasks = state.tasks.filter(t => !t.done);
@@ -2947,15 +3123,21 @@
       // Ordenar slots por hora
       const slots = [...state.slots].sort((a, b) => a.startMin - b.startMin);
       
+      // Crear mapa de color por slot (índice del slot determina el color)
+      const slotColorMap = {};
+      slots.forEach((s, i) => {
+        slotColorMap[s.id] = i % 8;
+      });
+      
       // Calcular alturas
       const taskHeights = tasks.map(t => {
         const poms = minToPomodoros(t.estimateMin);
-        return Math.max(MIN_HEIGHT, poms * PIXELS_PER_POMODORO);
+        return Math.max(MIN_HEIGHT_TASK, poms * PIXELS_PER_POMODORO);
       });
       
       const slotHeights = slots.map(s => {
         const poms = minToPomodoros(s.durationMin);
-        return Math.max(MIN_HEIGHT, poms * PIXELS_PER_POMODORO);
+        return Math.max(MIN_HEIGHT_SLOT, poms * PIXELS_PER_POMODORO);
       });
       
       // Calcular posiciones Y acumuladas
@@ -3002,12 +3184,22 @@
         ${slots.map((slot, i) => {
           const stats = getSlotStats(state, slot.id);
           const poms = minToPomodoros(slot.durationMin);
+          const usedPoms = minToPomodoros(stats.assignedMin);
+          const freePoms = minToPomodoros(Math.max(0, stats.remainingMin));
+          const fillPercent = Math.min(100, (stats.assignedMin / slot.durationMin) * 100);
+          const colorClass = `slot-color-${slotColorMap[slot.id]}`;
           return `
-            <div class="chord-item chord-slot ${stats.isOverbooked ? 'overbooked' : ''}" 
+            <div class="chord-item chord-slot ${stats.isOverbooked ? 'overbooked' : ''} ${colorClass}" 
                  data-slot-id="${slot.id}"
                  style="height: ${slotHeights[i]}px;">
               <div class="chord-item-title">${escapeHtml(slot.title)}</div>
               <div class="chord-item-meta">${formatMinToTime(slot.startMin)} · ${poms.toFixed(1)} 🍅</div>
+              <div class="chord-slot-capacity">
+                ${usedPoms.toFixed(1)}/${poms.toFixed(1)} 🍅 ${stats.isOverbooked ? '⚠️' : `(${freePoms.toFixed(1)} libre)`}
+              </div>
+              <div class="chord-slot-bar">
+                <div class="chord-slot-bar-fill ${colorClass}" style="width: ${fillPercent}%"></div>
+              </div>
             </div>
           `;
         }).join('')}
@@ -3020,7 +3212,6 @@
       
       // Dibujar conexiones (curvas bezier)
       let pathsHtml = '';
-      let colorIndex = 0;
       
       // También guardar info para botones de desasignar
       const unassignButtons = [];
@@ -3033,6 +3224,9 @@
         
         const taskPos = taskPositions[taskIndex];
         const slotPos = slotPositions[slotIndex];
+        
+        // Color basado en el slot (todas las líneas al mismo slot tienen el mismo color)
+        const slotColorIndex = slotColorMap[assignment.slotId];
         
         // Puntos de la curva
         const x1 = 0;
@@ -3048,7 +3242,7 @@
         const strokeWidth = Math.max(2, Math.min(8, assignment.minutes / 10));
         
         pathsHtml += `
-          <path class="chord-path color-${colorIndex % 8}" 
+          <path class="chord-path slot-color-${slotColorIndex}" 
                 d="M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}"
                 stroke-width="${strokeWidth}"
                 data-task="${assignment.taskId}"
@@ -3063,8 +3257,6 @@
           x: 8, // cerca del borde izquierdo del SVG
           y: y1
         });
-        
-        colorIndex++;
       });
       
       svg.innerHTML = pathsHtml;
@@ -3194,6 +3386,7 @@
       
       renderTasks();
       renderSlots();
+      updateTasksSummary();
       
       // Si estamos en vista chord, actualizarla también
       if (currentView === 'chord') {
