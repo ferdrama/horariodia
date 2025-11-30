@@ -52,6 +52,46 @@
       box-shadow: var(--shadow);
     }
     
+    .header.collapsed .header-collapsible {
+      display: none;
+    }
+    
+    .header-collapsible {
+      display: block;
+    }
+    
+    .header-toggle {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .header-toggle:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .header-toggle:active {
+      transform: scale(0.95);
+    }
+    
+    .header.collapsed .header-toggle {
+      transform: rotate(180deg);
+    }
+    
+    .header.collapsed .header-toggle:active {
+      transform: rotate(180deg) scale(0.95);
+    }
+    
     .header h1 {
       margin: 0;
       font-size: 1.25rem;
@@ -1271,33 +1311,36 @@
 </head>
 <body>
   <!-- HEADER -->
-  <header class="header">
+  <header class="header" id="mainHeader">
     <div class="header-top">
       <div>
         <h1>🗓️ Huecos & Tareas</h1>
         <div class="day-label" id="dayLabel">Hoy: --</div>
       </div>
+      <button class="header-toggle" id="headerToggle" title="Mostrar/ocultar opciones">▲</button>
       <div class="view-toggle">
         <button id="viewNormal" class="active">📋 Normal</button>
         <button id="viewChord">🔗 Conexiones</button>
       </div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-primary btn-small" id="btnToday">📅 Hoy</button>
-      <button class="btn btn-primary btn-small" id="btnResetDay">🔄 Reset día</button>
-      <button class="btn btn-primary btn-small" id="btnExport">📤 Exportar</button>
-      <button class="btn btn-primary btn-small" id="btnImport">📥 Importar</button>
-      <button class="btn btn-primary btn-small" id="btnDemo">🎯 Demo</button>
-      <button class="btn btn-primary btn-small" id="btnResetAll">🗑️ Reset todo</button>
-    </div>
-    <div class="pomodoro-config">
-      <label>
-        🍅 Pomodoro:
-        <input type="number" id="pomodoroDuration" value="25" min="1" max="120"> min
-      </label>
-      <div class="unit-toggle">
-        <button id="unitMin" class="active">Minutos</button>
-        <button id="unitPom">Pomodoros</button>
+    <div class="header-collapsible">
+      <div class="header-actions">
+        <button class="btn btn-primary btn-small" id="btnToday">📅 Hoy</button>
+        <button class="btn btn-primary btn-small" id="btnResetDay">🔄 Reset día</button>
+        <button class="btn btn-primary btn-small" id="btnExport">📤 Exportar</button>
+        <button class="btn btn-primary btn-small" id="btnImport">📥 Importar</button>
+        <button class="btn btn-primary btn-small" id="btnDemo">🎯 Demo</button>
+        <button class="btn btn-primary btn-small" id="btnResetAll">🗑️ Reset todo</button>
+      </div>
+      <div class="pomodoro-config">
+        <label>
+          🍅 Pomodoro:
+          <input type="number" id="pomodoroDuration" value="25" min="1" max="120"> min
+        </label>
+        <div class="unit-toggle">
+          <button id="unitMin" class="active">Minutos</button>
+          <button id="unitPom">Pomodoros</button>
+        </div>
       </div>
     </div>
     <div class="tasks-summary" id="tasksSummary">
@@ -1537,6 +1580,7 @@
     // ========== POMODORO ==========
     
     const POMODORO_STORAGE_KEY = 'huecosPlanner.pomodoro';
+    const HEADER_STORAGE_KEY = 'huecosPlanner.headerCollapsed';
     
     // Configuración de Pomodoro
     let pomodoroConfig = {
@@ -3902,6 +3946,31 @@
       }
     });
 
+    // ========== HEADER TOGGLE ==========
+    
+    function loadHeaderState() {
+      try {
+        const collapsed = localStorage.getItem(HEADER_STORAGE_KEY) === 'true';
+        document.getElementById('mainHeader').classList.toggle('collapsed', collapsed);
+      } catch (e) {
+        console.warn('Error loading header state:', e);
+      }
+    }
+    
+    function saveHeaderState(collapsed) {
+      try {
+        localStorage.setItem(HEADER_STORAGE_KEY, collapsed ? 'true' : 'false');
+      } catch (e) {
+        console.warn('Error saving header state:', e);
+      }
+    }
+    
+    document.getElementById('headerToggle').addEventListener('click', () => {
+      const header = document.getElementById('mainHeader');
+      const isCollapsed = header.classList.toggle('collapsed');
+      saveHeaderState(isCollapsed);
+    });
+
     // ========== PWA ==========
 
     // Registrar Service Worker
@@ -3915,6 +3984,7 @@
 
     // ========== INIT ==========
     loadPomodoroConfig();
+    loadHeaderState();
     document.getElementById('pomodoroDuration').value = pomodoroConfig.duration;
     updateUnitLabels();
     render();
