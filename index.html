@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4a90d9">
+  <meta name="description" content="Huecos & Tareas - Planificador diario por capacidad">
+  <title>Huecos & Tareas</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    /* ========== RESET & BASE ========== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --primary: #4a90d9;
+      --primary-dark: #357abd;
+      --danger: #e74c3c;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --gray-100: #f8f9fa;
+      --gray-200: #e9ecef;
+      --gray-300: #dee2e6;
+      --gray-500: #adb5bd;
+      --gray-700: #495057;
+      --gray-900: #212529;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    
+    /* ========== HEADER ========== */
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .day-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .btn:active {
+      transform: scale(0.97);
+    }
+    
+    .btn-primary {
+      background: white;
+      color: var(--primary);
+    }
+    
+    .btn-primary:hover {
+      background: var(--gray-100);
+    }
+    
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: var(--gray-200);
+      color: var(--gray-700);
+    }
+    
+    .btn-icon {
+      padding: 6px;
+      min-width: 32px;
+      justify-content: center;
+    }
+    
+    /* ========== MAIN LAYOUT ========== */
+    .main {
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    @media (min-width: 768px) {
+      .main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+    }
+    
+    .section {
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* ========== FORMS ========== */
+    .form-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .form-row input[type="text"],
+    .form-row input[type="number"],
+    .form-row input[type="time"] {
+      flex: 1;
+      min-width: 80px;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 1rem;
+    }
+    
+    .form-row input[type="number"] {
+      max-width: 80px;
+    }
+    
+    .form-row input[type="time"] {
+      max-width: 110px;
+    }
+    
+    .form-row input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+    }
+    
+    /* ========== FILTERS ========== */
+    .filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .chip {
+      padding: 6px 12px;
+      background: var(--gray-200);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    
+    .chip.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    /* ========== CARDS ========== */
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .card-title {
+      font-weight: 600;
+      margin: 0;
+      font-size: 1rem;
+    }
+    
+    .card-subtitle {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    
+    /* ========== TASK CARD ========== */
+    .task-card {
+      border-left: 4px solid var(--primary);
+    }
+    
+    .task-card.done {
+      opacity: 0.6;
+      border-left-color: var(--success);
+    }
+    
+    .task-card.done .card-title {
+      text-decoration: line-through;
+    }
+    
+    .task-card.fully-assigned {
+      border-left-color: var(--success);
+    }
+    
+    .task-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: var(--gray-700);
+    }
+    
+    .task-remaining {
+      color: var(--warning);
+      font-weight: 500;
+    }
+    
+    .task-remaining.zero {
+      color: var(--success);
+    }
+    
+    /* Task dragging */
+    .task-card {
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+    
+    .task-card.dragging {
+      opacity: 0.8;
+      transform: scale(1.02);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      cursor: grabbing;
+      z-index: 1000;
+    }
+    
+    .task-card .drag-handle {
+      cursor: grab;
+      padding: 4px;
+      margin-right: 6px;
+      color: var(--gray-400);
+      user-select: none;
+    }
+    
+    .task-card .drag-handle:hover {
+      color: var(--gray-600);
+    }
+    
+    .task-card-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.9;
+      transform: rotate(2deg);
+      max-width: 280px;
+      background: white;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      border-left: 4px solid var(--primary);
+    }
+    
+    .task-list-dropzone {
+      min-height: 6px;
+      margin: 2px 0;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    
+    .task-list-dropzone.active {
+      background: var(--primary);
+      opacity: 0.3;
+      min-height: 40px;
+    }
+    
+    .timeline-slot.drop-target {
+      box-shadow: 0 0 0 3px var(--success), inset 0 0 10px rgba(76, 175, 80, 0.2);
+      transform: scale(1.02);
+    }
+    
+    /* ========== SLOT CARD ========== */
+    /* ========== TIMELINE ========== */
+    .timeline-container {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--gray-100);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .timeline-range {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    
+    .timeline-range input {
+      padding: 4px 8px;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .timeline-wrapper {
+      position: relative;
+      height: 600px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    .timeline {
+      position: relative;
+      min-height: 100%;
+    }
+    
+    .timeline-hours {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 50px;
+      height: 100%;
+      background: var(--gray-100);
+      border-right: 1px solid var(--gray-300);
+      z-index: 5;
+    }
+    
+    .timeline-hour {
+      position: absolute;
+      left: 0;
+      width: 50px;
+      height: 60px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--gray-700);
+      padding-top: 2px;
+      border-top: 1px solid var(--gray-300);
+    }
+    
+    .timeline-grid {
+      position: absolute;
+      left: 50px;
+      right: 0;
+      top: 0;
+      height: 100%;
+    }
+    
+    .timeline-grid-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--gray-200);
+    }
+    
+    .timeline-grid-line.hour {
+      background: var(--gray-300);
+    }
+    
+    .timeline-slots {
+      position: absolute;
+      left: 50px;
+      right: 8px;
+      top: 0;
+      height: 100%;
+    }
+    
+    .timeline-slot {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      background: var(--primary);
+      border-radius: 6px;
+      padding: 6px 8px;
+      color: white;
+      font-size: 0.8rem;
+      cursor: grab;
+      user-select: none;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: box-shadow 0.2s, opacity 0.2s;
+      min-height: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .timeline-slot:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .timeline-slot.dragging {
+      opacity: 0.8;
+      cursor: grabbing;
+      z-index: 100;
+    }
+    
+    .timeline-slot.overbooked {
+      background: var(--danger);
+    }
+    
+    .timeline-slot-title {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .timeline-slot-time {
+      font-size: 0.7rem;
+      opacity: 0.9;
+    }
+    
+    .timeline-slot-capacity {
+      font-size: 0.7rem;
+      margin-top: auto;
+      opacity: 0.9;
+    }
+    
+    .timeline-slot-actions {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      z-index: 10;
+    }
+    
+    .timeline-slot:hover .timeline-slot-actions {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .timeline-slot-actions button {
+      background: rgba(255,255,255,0.3);
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: white;
+    }
+    
+    .timeline-slot-actions button:hover {
+      background: rgba(255,255,255,0.5);
+    }
+    
+    .timeline-slot-resize {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 8px;
+      cursor: ns-resize;
+      background: transparent;
+      z-index: 5;
+    }
+    
+    .timeline-slot-resize:hover,
+    .timeline-slot-resize.resizing {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .timeline-slot-assignments {
+      margin-top: 4px;
+      font-size: 0.7rem;
+      opacity: 0.9;
+    }
+    
+    .timeline-slot-assignment {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+      border-top: 1px dashed rgba(255,255,255,0.3);
+    }
+    
+    .timeline-slot-assignment button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 3px;
+      color: white;
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      cursor: pointer;
+      pointer-events: auto;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .timeline-slot-assignment button:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    
+    .timeline-now-line {
+      position: absolute;
+      left: 50px;
+      right: 0;
+      height: 2px;
+      background: var(--danger);
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    .timeline-now-line::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: -4px;
+      width: 10px;
+      height: 10px;
+      background: var(--danger);
+      border-radius: 50%;
+    }
+    
+    /* Slot popup para asignar tareas */
+    .slot-popup {
+      position: fixed;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      padding: 12px;
+      z-index: 150;
+      min-width: 280px;
+      max-width: 350px;
+    }
+    
+    .slot-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .slot-popup-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    .slot-popup-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: var(--gray-500);
+      padding: 0;
+      line-height: 1;
+    }
+    
+    .slot-popup-capacity {
+      font-size: 0.85rem;
+      color: var(--gray-700);
+      margin-bottom: 10px;
+    }
+    
+    .slot-popup-assignments {
+      margin-bottom: 10px;
+    }
+    
+    .slot-popup-assignment {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--gray-200);
+      font-size: 0.85rem;
+    }
+    
+    .slot-popup-form {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .slot-popup-form select {
+      flex: 1;
+      min-width: 120px;
+      padding: 6px;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .slot-popup-form input {
+      width: 60px;
+      padding: 6px;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    /* ========== TOAST ========== */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--gray-900);
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      z-index: 1000;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      max-width: 90%;
+      text-align: center;
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.error {
+      background: var(--danger);
+    }
+    
+    .toast.success {
+      background: var(--success);
+    }
+    
+    /* ========== MODAL ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+    
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal h3 {
+      margin: 0 0 16px 0;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    
+    .modal textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 10px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+    }
+    
+    .modal input[type="text"],
+    .modal input[type="number"],
+    .modal input[type="time"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+    
+    .modal label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      color: var(--gray-700);
+    }
+    
+    /* ========== EMPTY STATE ========== */
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--gray-500);
+      font-size: 0.9rem;
+    }
+    
+    /* ========== CHECKBOX ========== */
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .checkbox-wrapper input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    
+    /* ========== UTILITIES ========== */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <h1>🗓️ Huecos & Tareas</h1>
+        <div class="day-label" id="dayLabel">Hoy: --</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-small" id="btnToday">📅 Hoy</button>
+      <button class="btn btn-primary btn-small" id="btnResetDay">🔄 Reset día</button>
+      <button class="btn btn-primary btn-small" id="btnExport">📤 Exportar</button>
+      <button class="btn btn-primary btn-small" id="btnImport">📥 Importar</button>
+      <button class="btn btn-primary btn-small" id="btnDemo">🎯 Demo</button>
+      <button class="btn btn-primary btn-small" id="btnResetAll">🗑️ Reset todo</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TAREAS -->
+    <section class="section">
+      <h2 class="section-title">📋 Tareas</h2>
+      
+      <div class="form-row">
+        <input type="text" id="taskTitle" placeholder="Nueva tarea…" aria-label="Nombre de la tarea">
+        <input type="number" id="taskMinutes" value="25" min="1" placeholder="min" aria-label="Duración en minutos">
+        <button class="btn btn-success" id="btnAddTask">+ Añadir</button>
+      </div>
+      
+      <div class="filters">
+        <button class="chip active" data-filter="pending">Pendientes</button>
+        <button class="chip" data-filter="done">Hechas</button>
+        <button class="chip" data-filter="all">Todas</button>
+      </div>
+      
+      <div id="taskList"></div>
+    </section>
+
+    <!-- HUECOS - TIMELINE -->
+    <section class="section">
+      <h2 class="section-title">⏰ Huecos</h2>
+      
+      <div class="form-row">
+        <input type="text" id="slotTitle" placeholder="Nombre del hueco…" aria-label="Nombre del hueco">
+        <input type="time" id="slotStart" value="09:00" aria-label="Hora de inicio">
+        <input type="number" id="slotDuration" value="60" min="1" placeholder="min" aria-label="Duración en minutos">
+        <button class="btn btn-success" id="btnAddSlot">+ Añadir</button>
+      </div>
+      
+      <div class="timeline-container">
+        <div class="timeline-header">
+          <span style="font-weight: 500; font-size: 0.9rem;">Vista del día</span>
+          <div class="timeline-range">
+            <label>Desde:</label>
+            <input type="time" id="timelineStart" value="06:00">
+            <label>Hasta:</label>
+            <input type="time" id="timelineEnd" value="22:00">
+          </div>
+        </div>
+        <div class="timeline-wrapper" id="timelineWrapper">
+          <div class="timeline" id="timeline">
+            <div class="timeline-hours" id="timelineHours"></div>
+            <div class="timeline-grid" id="timelineGrid"></div>
+            <div class="timeline-slots" id="timelineSlots"></div>
+            <div class="timeline-now-line" id="timelineNow" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- SLOT POPUP -->
+  <div class="slot-popup hidden" id="slotPopup">
+    <div class="slot-popup-header">
+      <span class="slot-popup-title" id="slotPopupTitle">Hueco</span>
+      <button class="slot-popup-close" id="slotPopupClose">×</button>
+    </div>
+    <div class="slot-popup-capacity" id="slotPopupCapacity"></div>
+    <div class="slot-popup-assignments" id="slotPopupAssignments"></div>
+    <div class="slot-popup-form" id="slotPopupForm"></div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL IMPORT/EXPORT -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <h3 id="modalTitle">Modal</h3>
+      <div id="modalContent"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalClose">Cerrar</button>
+        <button class="btn btn-primary hidden" id="modalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT TASK -->
+  <div class="modal-overlay" id="editTaskModal">
+    <div class="modal">
+      <h3>Editar Tarea</h3>
+      <label>Título</label>
+      <input type="text" id="editTaskTitle">
+      <label>Duración estimada (min)</label>
+      <input type="number" id="editTaskMinutes" min="1">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="editTaskCancel">Cancelar</button>
+        <button class="btn btn-primary" id="editTaskSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT SLOT -->
+  <div class="modal-overlay" id="editSlotModal">
+    <div class="modal">
+      <h3>Editar Hueco</h3>
+      <label>Título</label>
+      <input type="text" id="editSlotTitle">
+      <label>Hora inicio</label>
+      <input type="time" id="editSlotStart">
+      <label>Duración (min)</label>
+      <input type="number" id="editSlotDuration" min="1">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="editSlotCancel">Cancelar</button>
+        <button class="btn btn-primary" id="editSlotSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ASSIGN FROM TASK -->
+  <div class="modal-overlay" id="assignFromTaskModal">
+    <div class="modal">
+      <h3>Asignar a un hueco</h3>
+      <p id="assignFromTaskInfo"></p>
+      <label>Seleccionar hueco</label>
+      <select id="assignFromTaskSlot" style="width:100%; padding:10px; margin-bottom:10px; border-radius:var(--radius); border:1px solid var(--gray-300);"></select>
+      <label>Minutos a asignar</label>
+      <input type="number" id="assignFromTaskMinutes" min="1">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="assignFromTaskCancel">Cancelar</button>
+        <button class="btn btn-success" id="assignFromTaskConfirm">Asignar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== UTILIDADES ==========
+    
+    /**
+     * Genera un UUID simple
+     */
+    function uuid() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'xxxx-xxxx-xxxx'.replace(/x/g, () => 
+        Math.floor(Math.random() * 16).toString(16)
+      );
+    }
+
+    /**
+     * Convierte "HH:MM" a minutos desde 00:00
+     */
+    function parseTimeToMin(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    /**
+     * Convierte minutos desde 00:00 a "HH:MM"
+     */
+    function formatMinToTime(min) {
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    /**
+     * Obtiene la clave del día actual (YYYY-MM-DD)
+     */
+    function getTodayKey() {
+      const now = new Date();
+      return now.toISOString().slice(0, 10);
+    }
+
+    /**
+     * Formatea fecha para mostrar
+     */
+    function formatDateDisplay(dateKey) {
+      const date = new Date(dateKey + 'T00:00:00');
+      return date.toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long' 
+      });
+    }
+
+    // ========== ESTADO ==========
+    
+    const STORAGE_KEY = 'huecosPlanner.v1';
+
+    /**
+     * Estado inicial vacío
+     */
+    function createEmptyState() {
+      return {
+        version: 1,
+        dayKey: getTodayKey(),
+        slots: [],
+        tasks: [],
+        assignments: []
+      };
+    }
+
+    /**
+     * Carga el estado desde localStorage
+     */
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          return JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error('Error loading state:', e);
+      }
+      return createEmptyState();
+    }
+
+    /**
+     * Guarda el estado en localStorage
+     */
+    function save(state) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Error saving state:', e);
+        showToast('Error al guardar datos', 'error');
+      }
+    }
+
+    // Estado global
+    let state = load();
+
+    // ========== LÓGICA DE NEGOCIO (funciones puras) ==========
+
+    /**
+     * Añade un slot al estado
+     */
+    function addSlot(state, slotDraft) {
+      const slot = {
+        id: uuid(),
+        title: slotDraft.title.trim(),
+        startMin: slotDraft.startMin,
+        durationMin: slotDraft.durationMin,
+        color: slotDraft.color || null,
+        notes: slotDraft.notes || ''
+      };
+      return {
+        ...state,
+        slots: [...state.slots, slot]
+      };
+    }
+
+    /**
+     * Añade una tarea al estado
+     */
+    function addTask(state, taskDraft) {
+      const task = {
+        id: uuid(),
+        title: taskDraft.title.trim(),
+        estimateMin: taskDraft.estimateMin,
+        remainingMin: taskDraft.estimateMin,
+        priority: taskDraft.priority || 2,
+        done: false
+      };
+      return {
+        ...state,
+        tasks: [...state.tasks, task]
+      };
+    }
+
+    /**
+     * Calcula estadísticas de un slot
+     */
+    function getSlotStats(state, slotId) {
+      const slot = state.slots.find(s => s.id === slotId);
+      if (!slot) return null;
+      
+      const assignedMin = state.assignments
+        .filter(a => a.slotId === slotId)
+        .reduce((sum, a) => sum + a.minutes, 0);
+      
+      return {
+        assignedMin,
+        remainingMin: slot.durationMin - assignedMin,
+        isOverbooked: assignedMin > slot.durationMin
+      };
+    }
+
+    /**
+     * Calcula estadísticas de una tarea
+     */
+    function getTaskStats(state, taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return null;
+      
+      const allocatedMin = state.assignments
+        .filter(a => a.taskId === taskId)
+        .reduce((sum, a) => sum + a.minutes, 0);
+      
+      return {
+        allocatedMin,
+        remainingMin: Math.max(0, task.estimateMin - allocatedMin),
+        isFullyAssigned: allocatedMin >= task.estimateMin
+      };
+    }
+
+    /**
+     * Asigna minutos de una tarea a un slot
+     */
+    function assignTask(state, slotId, taskId, minutes) {
+      // Validaciones
+      if (minutes <= 0) {
+        throw new Error('Los minutos deben ser mayores a 0');
+      }
+
+      const slotStats = getSlotStats(state, slotId);
+      const taskStats = getTaskStats(state, taskId);
+      
+      if (!slotStats) throw new Error('Hueco no encontrado');
+      if (!taskStats) throw new Error('Tarea no encontrada');
+      
+      if (minutes > slotStats.remainingMin) {
+        throw new Error(`Solo quedan ${slotStats.remainingMin} minutos en este hueco`);
+      }
+      
+      if (taskStats.remainingMin <= 0) {
+        throw new Error('Esta tarea ya está completamente asignada');
+      }
+
+      const assignment = {
+        id: uuid(),
+        slotId,
+        taskId,
+        minutes
+      };
+
+      // Actualizar remainingMin de la tarea
+      const newRemainingMin = Math.max(0, taskStats.remainingMin - minutes);
+      const updatedTasks = state.tasks.map(t => 
+        t.id === taskId 
+          ? { ...t, remainingMin: newRemainingMin }
+          : t
+      );
+
+      return {
+        ...state,
+        tasks: updatedTasks,
+        assignments: [...state.assignments, assignment]
+      };
+    }
+
+    /**
+     * Elimina una asignación
+     */
+    function removeAssignment(state, assignmentId) {
+      const assignment = state.assignments.find(a => a.id === assignmentId);
+      if (!assignment) return state;
+
+      // Restaurar remainingMin de la tarea
+      const task = state.tasks.find(t => t.id === assignment.taskId);
+      const updatedTasks = task 
+        ? state.tasks.map(t => 
+            t.id === assignment.taskId 
+              ? { ...t, remainingMin: Math.min(t.estimateMin, t.remainingMin + assignment.minutes) }
+              : t
+          )
+        : state.tasks;
+
+      return {
+        ...state,
+        tasks: updatedTasks,
+        assignments: state.assignments.filter(a => a.id !== assignmentId)
+      };
+    }
+
+    /**
+     * Elimina un slot y sus asignaciones
+     */
+    function removeSlot(state, slotId) {
+      const assignmentsToRemove = state.assignments.filter(a => a.slotId === slotId);
+      let newState = state;
+      
+      // Eliminar asignaciones y restaurar remainingMin
+      for (const a of assignmentsToRemove) {
+        newState = removeAssignment(newState, a.id);
+      }
+      
+      return {
+        ...newState,
+        slots: newState.slots.filter(s => s.id !== slotId)
+      };
+    }
+
+    /**
+     * Elimina una tarea y sus asignaciones
+     */
+    function removeTask(state, taskId) {
+      return {
+        ...state,
+        tasks: state.tasks.filter(t => t.id !== taskId),
+        assignments: state.assignments.filter(a => a.taskId !== taskId)
+      };
+    }
+
+    /**
+     * Alterna el estado done de una tarea
+     */
+    function toggleTaskDone(state, taskId) {
+      return {
+        ...state,
+        tasks: state.tasks.map(t => 
+          t.id === taskId ? { ...t, done: !t.done } : t
+        )
+      };
+    }
+
+    /**
+     * Actualiza una tarea
+     */
+    function updateTask(state, taskId, updates) {
+      return {
+        ...state,
+        tasks: state.tasks.map(t => {
+          if (t.id !== taskId) return t;
+          
+          const newTask = { ...t, ...updates };
+          
+          // Si cambia estimateMin, recalcular remainingMin
+          if (updates.estimateMin !== undefined) {
+            const allocated = state.assignments
+              .filter(a => a.taskId === taskId)
+              .reduce((sum, a) => sum + a.minutes, 0);
+            newTask.remainingMin = Math.max(0, updates.estimateMin - allocated);
+          }
+          
+          return newTask;
+        })
+      };
+    }
+
+    /**
+     * Actualiza un slot
+     */
+    function updateSlot(state, slotId, updates) {
+      return {
+        ...state,
+        slots: state.slots.map(s => 
+          s.id === slotId ? { ...s, ...updates } : s
+        )
+      };
+    }
+
+    /**
+     * Reset del día: mantiene slots, borra tareas y asignaciones
+     */
+    function resetDay(state) {
+      return {
+        ...state,
+        dayKey: getTodayKey(),
+        tasks: [],
+        assignments: []
+      };
+    }
+
+    /**
+     * Reset completo
+     */
+    function resetAll() {
+      return createEmptyState();
+    }
+
+    // ========== UI ==========
+
+    let currentFilter = 'pending';
+    let editingTaskId = null;
+    let editingSlotId = null;
+    let assigningTaskId = null;
+
+    /**
+     * Muestra un toast
+     */
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show' + (type !== 'info' ? ` ${type}` : '');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    /**
+     * Renderiza la lista de tareas
+     */
+    function renderTasks() {
+      const container = document.getElementById('taskList');
+      
+      // Filtrar tareas
+      let filtered = state.tasks;
+      if (currentFilter === 'pending') {
+        filtered = state.tasks.filter(t => !t.done && t.remainingMin > 0);
+      } else if (currentFilter === 'done') {
+        filtered = state.tasks.filter(t => t.done);
+      }
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            ${currentFilter === 'pending' ? 'No hay tareas pendientes' : 
+              currentFilter === 'done' ? 'No hay tareas completadas' : 
+              'No hay tareas. ¡Añade una!'}
+          </div>
+        `;
+        return;
+      }
+      
+      // Calcular altura proporcional: mínimo 60px, máximo 150px, escala de 1px por minuto
+      const calcHeight = (estimateMin) => {
+        const minHeight = 60;
+        const maxHeight = 150;
+        const height = Math.max(minHeight, Math.min(maxHeight, 40 + estimateMin * 0.8));
+        return height;
+      };
+      
+      container.innerHTML = filtered.map((task, index) => {
+        const stats = getTaskStats(state, task.id);
+        const isFullyAssigned = stats.remainingMin === 0;
+        const taskHeight = calcHeight(task.estimateMin);
+        
+        return `
+          <div class="card task-card ${task.done ? 'done' : ''} ${isFullyAssigned ? 'fully-assigned' : ''}" 
+               data-id="${task.id}" 
+               data-index="${index}"
+               draggable="true"
+               style="min-height: ${taskHeight}px;">
+            <div class="card-header">
+              <div>
+                <div class="checkbox-wrapper">
+                  <span class="drag-handle" title="Arrastrar para reordenar">⋮⋮</span>
+                  <input type="checkbox" ${task.done ? 'checked' : ''} 
+                         onchange="handleToggleDone('${task.id}')" 
+                         aria-label="Marcar como ${task.done ? 'pendiente' : 'hecha'}">
+                  <h4 class="card-title">${escapeHtml(task.title)}</h4>
+                </div>
+                <div class="task-meta">
+                  <span>⏱️ ${task.estimateMin} min</span>
+                  <span class="task-remaining ${stats.remainingMin === 0 ? 'zero' : ''}">
+                    ${stats.remainingMin > 0 ? `Restante: ${stats.remainingMin} min` : '✓ Asignada'}
+                  </span>
+                </div>
+              </div>
+              <div class="card-actions">
+                ${stats.remainingMin > 0 ? `
+                  <button class="btn btn-small btn-success" onclick="openAssignFromTask('${task.id}')" title="Asignar a hueco">📥</button>
+                ` : ''}
+                <button class="btn btn-small btn-secondary" onclick="openEditTask('${task.id}')" title="Editar">✏️</button>
+                <button class="btn btn-small btn-danger" onclick="handleDeleteTask('${task.id}')" title="Eliminar">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Setup drag events for task cards
+      setupTaskDragEvents();
+    }
+
+    /**
+     * Renderiza la lista de slots en el timeline
+     */
+    function renderSlots() {
+      renderTimeline();
+    }
+    
+    // ========== TIMELINE ==========
+    
+    // Configuración del timeline
+    let timelineStartMin = 6 * 60;  // 06:00
+    let timelineEndMin = 22 * 60;   // 22:00
+    const PIXELS_PER_MINUTE = 1.5;  // Altura por minuto
+    
+    // Estado de drag & resize
+    let dragState = null;
+    let resizeState = null;
+    let activePopupSlotId = null;
+    
+    /**
+     * Calcula la altura total del timeline
+     */
+    function getTimelineHeight() {
+      return (timelineEndMin - timelineStartMin) * PIXELS_PER_MINUTE;
+    }
+    
+    /**
+     * Convierte minutos a posición Y en el timeline
+     */
+    function minToY(min) {
+      return (min - timelineStartMin) * PIXELS_PER_MINUTE;
+    }
+    
+    /**
+     * Convierte posición Y a minutos
+     */
+    function yToMin(y) {
+      return Math.round(y / PIXELS_PER_MINUTE) + timelineStartMin;
+    }
+    
+    /**
+     * Convierte duración en minutos a altura en píxeles
+     */
+    function durationToHeight(durationMin) {
+      return durationMin * PIXELS_PER_MINUTE;
+    }
+    
+    /**
+     * Convierte altura en píxeles a duración en minutos
+     */
+    function heightToDuration(height) {
+      return Math.round(height / PIXELS_PER_MINUTE);
+    }
+    
+    /**
+     * Renderiza el timeline completo
+     */
+    function renderTimeline() {
+      const timeline = document.getElementById('timeline');
+      const hoursContainer = document.getElementById('timelineHours');
+      const gridContainer = document.getElementById('timelineGrid');
+      const slotsContainer = document.getElementById('timelineSlots');
+      const nowLine = document.getElementById('timelineNow');
+      
+      const height = getTimelineHeight();
+      timeline.style.height = height + 'px';
+      
+      // Renderizar horas
+      hoursContainer.innerHTML = '';
+      for (let h = Math.floor(timelineStartMin / 60); h <= Math.floor(timelineEndMin / 60); h++) {
+        const min = h * 60;
+        if (min < timelineStartMin) continue;
+        if (min > timelineEndMin) break;
+        
+        const hourDiv = document.createElement('div');
+        hourDiv.className = 'timeline-hour';
+        hourDiv.style.top = minToY(min) + 'px';
+        hourDiv.textContent = formatMinToTime(min);
+        hoursContainer.appendChild(hourDiv);
+      }
+      
+      // Renderizar grid
+      gridContainer.innerHTML = '';
+      for (let min = timelineStartMin; min <= timelineEndMin; min += 15) {
+        const line = document.createElement('div');
+        line.className = 'timeline-grid-line' + (min % 60 === 0 ? ' hour' : '');
+        line.style.top = minToY(min) + 'px';
+        gridContainer.appendChild(line);
+      }
+      
+      // Renderizar slots
+      slotsContainer.innerHTML = '';
+      state.slots.forEach(slot => {
+        const stats = getSlotStats(state, slot.id);
+        const assignments = state.assignments.filter(a => a.slotId === slot.id);
+        
+        const slotEl = document.createElement('div');
+        slotEl.className = 'timeline-slot' + (stats.isOverbooked ? ' overbooked' : '');
+        slotEl.dataset.id = slot.id;
+        
+        const top = minToY(slot.startMin);
+        const slotHeight = durationToHeight(slot.durationMin);
+        slotEl.style.top = top + 'px';
+        slotEl.style.height = Math.max(30, slotHeight) + 'px';
+        
+        // Generar color basado en el título si no tiene uno asignado
+        if (slot.color) {
+          slotEl.style.background = slot.color;
+        }
+        
+        const endMin = slot.startMin + slot.durationMin;
+        
+        slotEl.innerHTML = `
+          <div class="timeline-slot-title">${escapeHtml(slot.title)}</div>
+          <div class="timeline-slot-time">${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)}</div>
+          ${slotHeight > 50 ? `
+            <div class="timeline-slot-capacity">
+              ${stats.assignedMin}/${slot.durationMin} min (${stats.remainingMin} libres)
+            </div>
+          ` : ''}
+          ${slotHeight > 80 && assignments.length > 0 ? `
+            <div class="timeline-slot-assignments">
+              ${assignments.slice(0, 3).map(a => {
+                const task = state.tasks.find(t => t.id === a.taskId);
+                return `<div class="timeline-slot-assignment">
+                  <span>${task ? escapeHtml(task.title.slice(0, 15)) : '?'}${task && task.title.length > 15 ? '…' : ''} (${a.minutes}m)</span>
+                  <button class="slot-remove-assignment-btn" data-assignment-id="${a.id}">✕</button>
+                </div>`;
+              }).join('')}
+              ${assignments.length > 3 ? `<div style="opacity:0.7">+${assignments.length - 3} más</div>` : ''}
+            </div>
+          ` : ''}
+          <div class="timeline-slot-actions">
+            <button class="slot-edit-btn" data-slot-id="${slot.id}">✏️</button>
+            <button class="slot-delete-btn" data-slot-id="${slot.id}">🗑️</button>
+          </div>
+          <div class="timeline-slot-resize" data-id="${slot.id}"></div>
+        `;
+        
+        // Setup drop events para recibir tareas
+        slotEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        
+        slotEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          // El drop se maneja en handleTaskDragEnd via elementFromPoint
+        });
+        
+        slotsContainer.appendChild(slotEl);
+      });
+      
+      // Mostrar línea de "ahora" si está en rango
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      if (nowMin >= timelineStartMin && nowMin <= timelineEndMin) {
+        nowLine.style.display = 'block';
+        nowLine.style.top = minToY(nowMin) + 'px';
+      } else {
+        nowLine.style.display = 'none';
+      }
+    }
+    
+    // Configurar event delegation para el timeline (se ejecuta una vez)
+    (function setupTimelineEvents() {
+      const slotsContainer = document.getElementById('timelineSlots');
+      let mouseDownTarget = null;
+      let mouseDownTime = 0;
+      
+      // Guardar el target del mousedown para verificar en mouseup
+      slotsContainer.addEventListener('mousedown', (e) => {
+        mouseDownTarget = e.target;
+        mouseDownTime = Date.now();
+        
+        // Si es un botón, NO iniciar drag
+        if (e.target.closest('button') || e.target.closest('.timeline-slot-actions')) {
+          return;
+        }
+        
+        // Resize handle
+        const resizeHandle = e.target.closest('.timeline-slot-resize');
+        if (resizeHandle) {
+          e.preventDefault();
+          e.stopPropagation();
+          startResize(resizeHandle.dataset.id, e);
+          return;
+        }
+        
+        // Drag del slot
+        const slotEl = e.target.closest('.timeline-slot');
+        if (slotEl) {
+          e.preventDefault();
+          startDrag(slotEl.dataset.id, e);
+        }
+      });
+      
+      // Usar mouseup para detectar clicks en botones
+      slotsContainer.addEventListener('mouseup', (e) => {
+        const timeDiff = Date.now() - mouseDownTime;
+        const sameTarget = mouseDownTarget === e.target || 
+                          (mouseDownTarget && e.target.closest('button') === mouseDownTarget.closest('button'));
+        
+        // Solo procesar si fue un click rápido (menos de 300ms) y en el mismo target
+        if (timeDiff > 300 || !sameTarget) {
+          mouseDownTarget = null;
+          return;
+        }
+        
+        // Botón editar
+        const editBtn = e.target.closest('.slot-edit-btn');
+        if (editBtn) {
+          e.stopPropagation();
+          openEditSlot(editBtn.dataset.slotId);
+          mouseDownTarget = null;
+          return;
+        }
+        
+        // Botón eliminar
+        const deleteBtn = e.target.closest('.slot-delete-btn');
+        if (deleteBtn) {
+          e.stopPropagation();
+          handleDeleteSlot(deleteBtn.dataset.slotId);
+          mouseDownTarget = null;
+          return;
+        }
+        
+        // Botón quitar asignación
+        const removeBtn = e.target.closest('.slot-remove-assignment-btn');
+        if (removeBtn) {
+          e.stopPropagation();
+          handleRemoveAssignment(removeBtn.dataset.assignmentId);
+          mouseDownTarget = null;
+          return;
+        }
+        
+        // Click en slot para abrir popup (solo si no hubo drag)
+        if (!dragState && !resizeState) {
+          const slotEl = e.target.closest('.timeline-slot');
+          if (slotEl && !e.target.closest('.timeline-slot-resize') && !e.target.closest('button')) {
+            openSlotPopup(slotEl.dataset.id, slotEl);
+          }
+        }
+        
+        mouseDownTarget = null;
+      });
+      
+      // Touch events para móvil
+      slotsContainer.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button') || e.target.closest('.timeline-slot-actions')) {
+          return;
+        }
+        
+        const resizeHandle = e.target.closest('.timeline-slot-resize');
+        if (resizeHandle) {
+          e.stopPropagation();
+          startResize(resizeHandle.dataset.id, e.touches[0]);
+          return;
+        }
+        
+        const slotEl = e.target.closest('.timeline-slot');
+        if (slotEl) {
+          startDrag(slotEl.dataset.id, e.touches[0]);
+        }
+      }, { passive: true });
+    })();
+    
+    /**
+     * Inicia el arrastre de un slot
+     */
+    function startDrag(slotId, event) {
+      const slot = state.slots.find(s => s.id === slotId);
+      if (!slot) return;
+      
+      const slotEl = document.querySelector(`.timeline-slot[data-id="${slotId}"]`);
+      if (!slotEl) return;
+      
+      closeSlotPopup();
+      
+      dragState = {
+        slotId,
+        startY: event.clientY,
+        startTop: parseFloat(slotEl.style.top),
+        originalStartMin: slot.startMin
+      };
+      
+      slotEl.classList.add('dragging');
+      document.body.style.cursor = 'grabbing';
+    }
+    
+    /**
+     * Inicia el redimensionado de un slot
+     */
+    function startResize(slotId, event) {
+      const slot = state.slots.find(s => s.id === slotId);
+      if (!slot) return;
+      
+      const slotEl = document.querySelector(`.timeline-slot[data-id="${slotId}"]`);
+      if (!slotEl) return;
+      
+      closeSlotPopup();
+      
+      resizeState = {
+        slotId,
+        startY: event.clientY,
+        startHeight: parseFloat(slotEl.style.height),
+        originalDuration: slot.durationMin
+      };
+      
+      slotEl.classList.add('dragging');
+      document.body.style.cursor = 'ns-resize';
+      
+      const handle = slotEl.querySelector('.timeline-slot-resize');
+      if (handle) handle.classList.add('resizing');
+    }
+    
+    /**
+     * Maneja el movimiento durante drag o resize
+     */
+    function handleDragMove(event) {
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+      
+      if (dragState) {
+        const slotEl = document.querySelector(`.timeline-slot[data-id="${dragState.slotId}"]`);
+        if (!slotEl) return;
+        
+        const deltaY = clientY - dragState.startY;
+        let newTop = dragState.startTop + deltaY;
+        
+        // Limitar al rango del timeline
+        const slot = state.slots.find(s => s.id === dragState.slotId);
+        const maxTop = getTimelineHeight() - durationToHeight(slot.durationMin);
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+        
+        // Snap a intervalos de 5 minutos
+        const newStartMin = yToMin(newTop);
+        const snappedMin = Math.round(newStartMin / 5) * 5;
+        const snappedTop = minToY(snappedMin);
+        
+        slotEl.style.top = snappedTop + 'px';
+        
+        // Actualizar hora mostrada
+        const endMin = snappedMin + slot.durationMin;
+        const timeEl = slotEl.querySelector('.timeline-slot-time');
+        if (timeEl) {
+          timeEl.textContent = `${formatMinToTime(snappedMin)} – ${formatMinToTime(endMin)}`;
+        }
+      }
+      
+      if (resizeState) {
+        const slotEl = document.querySelector(`.timeline-slot[data-id="${resizeState.slotId}"]`);
+        if (!slotEl) return;
+        
+        const deltaY = clientY - resizeState.startY;
+        let newHeight = resizeState.startHeight + deltaY;
+        
+        // Mínimo 15 minutos (un cuarto de hora)
+        const minHeight = durationToHeight(15);
+        newHeight = Math.max(minHeight, newHeight);
+        
+        // Máximo hasta el final del timeline
+        const slot = state.slots.find(s => s.id === resizeState.slotId);
+        const maxHeight = durationToHeight(timelineEndMin - slot.startMin);
+        newHeight = Math.min(newHeight, maxHeight);
+        
+        // Snap a 5 minutos
+        const newDuration = heightToDuration(newHeight);
+        const snappedDuration = Math.round(newDuration / 5) * 5;
+        const snappedHeight = durationToHeight(snappedDuration);
+        
+        slotEl.style.height = Math.max(30, snappedHeight) + 'px';
+        
+        // Actualizar info mostrada
+        const endMin = slot.startMin + snappedDuration;
+        const timeEl = slotEl.querySelector('.timeline-slot-time');
+        if (timeEl) {
+          timeEl.textContent = `${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)}`;
+        }
+        
+        const capacityEl = slotEl.querySelector('.timeline-slot-capacity');
+        if (capacityEl) {
+          const stats = getSlotStats(state, slot.id);
+          const newRemaining = snappedDuration - stats.assignedMin;
+          capacityEl.textContent = `${stats.assignedMin}/${snappedDuration} min (${newRemaining} libres)`;
+        }
+      }
+    }
+    
+    /**
+     * Finaliza el drag o resize
+     */
+    function handleDragEnd(event) {
+      if (dragState) {
+        const slotEl = document.querySelector(`.timeline-slot[data-id="${dragState.slotId}"]`);
+        if (slotEl) {
+          slotEl.classList.remove('dragging');
+          
+          // Calcular nueva posición
+          const newTop = parseFloat(slotEl.style.top);
+          const newStartMin = yToMin(newTop);
+          const snappedMin = Math.round(newStartMin / 5) * 5;
+          
+          // Actualizar estado si cambió
+          if (snappedMin !== dragState.originalStartMin) {
+            state = updateSlot(state, dragState.slotId, { startMin: snappedMin });
+            save(state);
+          }
+        }
+        
+        dragState = null;
+      }
+      
+      if (resizeState) {
+        const slotEl = document.querySelector(`.timeline-slot[data-id="${resizeState.slotId}"]`);
+        if (slotEl) {
+          slotEl.classList.remove('dragging');
+          
+          const handle = slotEl.querySelector('.timeline-slot-resize');
+          if (handle) handle.classList.remove('resizing');
+          
+          // Calcular nueva duración
+          const newHeight = parseFloat(slotEl.style.height);
+          const newDuration = heightToDuration(newHeight);
+          const snappedDuration = Math.max(15, Math.round(newDuration / 5) * 5);
+          
+          // Actualizar estado si cambió
+          if (snappedDuration !== resizeState.originalDuration) {
+            state = updateSlot(state, resizeState.slotId, { durationMin: snappedDuration });
+            save(state);
+            
+            // Verificar si quedó overbooking
+            const stats = getSlotStats(state, resizeState.slotId);
+            if (stats.isOverbooked) {
+              showToast(`Atención: Ya hay ${stats.assignedMin} min asignados`, 'error');
+            }
+          }
+        }
+        
+        resizeState = null;
+      }
+      
+      document.body.style.cursor = '';
+      renderSlots();
+    }
+    
+    // Event listeners globales para drag & resize
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: true });
+    document.addEventListener('touchend', handleDragEnd);
+    
+    // ========== TASK DRAG & DROP ==========
+    
+    let taskDragState = null;
+    let taskGhostEl = null;
+    
+    /**
+     * Configura eventos de drag para las tarjetas de tareas
+     */
+    function setupTaskDragEvents() {
+      const taskList = document.getElementById('taskList');
+      const slotsContainer = document.getElementById('timelineSlots');
+      
+      // Drag start
+      taskList.querySelectorAll('.task-card[draggable="true"]').forEach(card => {
+        card.addEventListener('dragstart', handleTaskDragStart);
+        card.addEventListener('dragend', handleTaskDragEnd);
+      });
+    }
+    
+    function handleTaskDragStart(e) {
+      const card = e.target.closest('.task-card');
+      if (!card) return;
+      
+      const taskId = card.dataset.id;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      const stats = getTaskStats(state, taskId);
+      
+      taskDragState = {
+        taskId,
+        taskTitle: task.title,
+        remainingMin: stats.remainingMin,
+        startIndex: parseInt(card.dataset.index, 10)
+      };
+      
+      card.classList.add('dragging');
+      
+      // Crear ghost element
+      taskGhostEl = document.createElement('div');
+      taskGhostEl.className = 'task-card-ghost';
+      taskGhostEl.innerHTML = `
+        <strong>${escapeHtml(task.title)}</strong>
+        <div style="font-size: 0.85rem; color: var(--gray-600); margin-top: 4px;">
+          ${stats.remainingMin > 0 ? `${stats.remainingMin} min restantes` : '✓ Completamente asignada'}
+        </div>
+      `;
+      document.body.appendChild(taskGhostEl);
+      
+      // Set drag image transparent (usamos nuestro ghost)
+      const img = new Image();
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      e.dataTransfer.setDragImage(img, 0, 0);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', taskId);
+      
+      // Añadir eventos de movimiento
+      document.addEventListener('dragover', handleTaskDragOver);
+    }
+    
+    function handleTaskDragOver(e) {
+      e.preventDefault();
+      
+      if (taskGhostEl) {
+        taskGhostEl.style.left = (e.clientX + 10) + 'px';
+        taskGhostEl.style.top = (e.clientY + 10) + 'px';
+      }
+      
+      // Detectar si está sobre un slot del timeline
+      const slotEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('.timeline-slot');
+      
+      // Quitar clase drop-target de todos los slots
+      document.querySelectorAll('.timeline-slot.drop-target').forEach(el => {
+        el.classList.remove('drop-target');
+      });
+      
+      if (slotEl && taskDragState && taskDragState.remainingMin > 0) {
+        slotEl.classList.add('drop-target');
+      }
+      
+      // Detectar si está sobre la lista de tareas para reordenar
+      const taskList = document.getElementById('taskList');
+      const taskCards = taskList.querySelectorAll('.task-card:not(.dragging)');
+      
+      taskCards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        
+        if (e.clientY < midY) {
+          card.style.borderTop = '3px solid var(--primary)';
+          card.style.borderBottom = '';
+        } else {
+          card.style.borderBottom = '3px solid var(--primary)';
+          card.style.borderTop = '';
+        }
+      });
+    }
+    
+    function handleTaskDragEnd(e) {
+      const card = e.target.closest('.task-card');
+      if (card) {
+        card.classList.remove('dragging');
+      }
+      
+      // Remover ghost
+      if (taskGhostEl) {
+        taskGhostEl.remove();
+        taskGhostEl = null;
+      }
+      
+      // Remover estilos de drop
+      document.querySelectorAll('.timeline-slot.drop-target').forEach(el => {
+        el.classList.remove('drop-target');
+      });
+      
+      document.querySelectorAll('.task-card').forEach(c => {
+        c.style.borderTop = '';
+        c.style.borderBottom = '';
+      });
+      
+      document.removeEventListener('dragover', handleTaskDragOver);
+      
+      // Detectar drop en slot
+      const dropSlot = document.elementFromPoint(e.clientX, e.clientY)?.closest('.timeline-slot');
+      
+      if (dropSlot && taskDragState && taskDragState.remainingMin > 0) {
+        const slotId = dropSlot.dataset.id;
+        const slot = state.slots.find(s => s.id === slotId);
+        const slotStats = getSlotStats(state, slotId);
+        
+        if (slot && slotStats.remainingMin > 0) {
+          // Calcular minutos a asignar: mínimo entre restantes de tarea y espacio del slot
+          const minutesToAssign = Math.min(taskDragState.remainingMin, slotStats.remainingMin);
+          
+          try {
+            state = assignTask(state, slotId, taskDragState.taskId, minutesToAssign);
+            save(state);
+            render();
+            showToast(`Asignados ${minutesToAssign} min de "${taskDragState.taskTitle}" a "${slot.title}"`, 'success');
+          } catch (err) {
+            showToast(err.message, 'error');
+          }
+        } else {
+          showToast('Este hueco está lleno', 'error');
+        }
+      } else if (taskDragState) {
+        // Detectar reordenamiento dentro de la lista
+        const taskList = document.getElementById('taskList');
+        const taskCards = Array.from(taskList.querySelectorAll('.task-card:not(.dragging)'));
+        
+        let newIndex = taskDragState.startIndex;
+        
+        for (let i = 0; i < taskCards.length; i++) {
+          const rect = taskCards[i].getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          
+          if (e.clientY < midY) {
+            // Insertar antes de este card
+            const targetId = taskCards[i].dataset.id;
+            newIndex = state.tasks.findIndex(t => t.id === targetId);
+            break;
+          } else if (i === taskCards.length - 1) {
+            // Insertar al final
+            newIndex = state.tasks.length;
+          }
+        }
+        
+        // Reordenar si cambió la posición
+        const draggedTaskIndex = state.tasks.findIndex(t => t.id === taskDragState.taskId);
+        if (draggedTaskIndex !== -1 && newIndex !== draggedTaskIndex) {
+          const newTasks = [...state.tasks];
+          const [removed] = newTasks.splice(draggedTaskIndex, 1);
+          
+          // Ajustar índice si eliminamos antes del punto de inserción
+          if (draggedTaskIndex < newIndex) {
+            newIndex--;
+          }
+          
+          newTasks.splice(newIndex, 0, removed);
+          state = { ...state, tasks: newTasks };
+          save(state);
+          render();
+        }
+      }
+      
+      taskDragState = null;
+    }
+
+    /**
+     * Abre el popup de asignación para un slot
+     */
+    function openSlotPopup(slotId, anchorEl) {
+      const slot = state.slots.find(s => s.id === slotId);
+      if (!slot) return;
+      
+      activePopupSlotId = slotId;
+      const popup = document.getElementById('slotPopup');
+      const stats = getSlotStats(state, slotId);
+      const assignments = state.assignments.filter(a => a.slotId === slotId);
+      const availableTasks = state.tasks.filter(t => {
+        const tStats = getTaskStats(state, t.id);
+        return tStats.remainingMin > 0;
+      });
+      
+      // Título
+      const endMin = slot.startMin + slot.durationMin;
+      document.getElementById('slotPopupTitle').textContent = 
+        `${slot.title} (${formatMinToTime(slot.startMin)}–${formatMinToTime(endMin)})`;
+      
+      // Capacidad
+      document.getElementById('slotPopupCapacity').innerHTML = `
+        <strong>Asignado:</strong> ${stats.assignedMin}/${slot.durationMin} min 
+        — <strong>Restante:</strong> ${stats.remainingMin} min
+        ${stats.isOverbooked ? '<span style="color:var(--danger)"> ⚠️ Excedido</span>' : ''}
+      `;
+      
+      // Asignaciones
+      const assignmentsHtml = assignments.length > 0 
+        ? assignments.map(a => {
+            const task = state.tasks.find(t => t.id === a.taskId);
+            return `
+              <div class="slot-popup-assignment">
+                <span>${task ? escapeHtml(task.title) : '(eliminada)'} — ${a.minutes} min</span>
+                <button class="btn btn-small btn-danger" onclick="handleRemoveAssignment('${a.id}')">✕</button>
+              </div>
+            `;
+          }).join('')
+        : '<div style="color:var(--gray-500); font-size:0.85rem; padding: 8px 0;">Sin tareas asignadas</div>';
+      document.getElementById('slotPopupAssignments').innerHTML = assignmentsHtml;
+      
+      // Formulario de asignación
+      if (stats.remainingMin > 0 && availableTasks.length > 0) {
+        document.getElementById('slotPopupForm').innerHTML = `
+          <select id="popupTaskSelect">
+            <option value="">Seleccionar tarea...</option>
+            ${availableTasks.map(t => {
+              const tStats = getTaskStats(state, t.id);
+              return `<option value="${t.id}">${escapeHtml(t.title)} (${tStats.remainingMin}m)</option>`;
+            }).join('')}
+          </select>
+          <input type="number" id="popupTaskMinutes" min="1" value="${Math.min(availableTasks[0] ? getTaskStats(state, availableTasks[0].id).remainingMin : 25, stats.remainingMin)}">
+          <button class="btn btn-small btn-success" onclick="handlePopupAssign()">+</button>
+        `;
+        
+        // Listener para actualizar minutos por defecto
+        document.getElementById('popupTaskSelect').addEventListener('change', () => {
+          const taskId = document.getElementById('popupTaskSelect').value;
+          if (taskId) {
+            const tStats = getTaskStats(state, taskId);
+            const sStats = getSlotStats(state, activePopupSlotId);
+            document.getElementById('popupTaskMinutes').value = Math.min(tStats.remainingMin, sStats.remainingMin);
+          }
+        });
+      } else if (stats.remainingMin <= 0) {
+        document.getElementById('slotPopupForm').innerHTML = 
+          '<div style="color:var(--gray-500); font-size:0.85rem;">Hueco lleno</div>';
+      } else {
+        document.getElementById('slotPopupForm').innerHTML = 
+          '<div style="color:var(--gray-500); font-size:0.85rem;">No hay tareas disponibles</div>';
+      }
+      
+      // Posicionar popup
+      const rect = anchorEl.getBoundingClientRect();
+      const popupWidth = 300;
+      
+      let left = rect.right + 10;
+      let top = rect.top;
+      
+      // Ajustar si se sale de la pantalla
+      if (left + popupWidth > window.innerWidth) {
+        left = rect.left - popupWidth - 10;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      if (top + 300 > window.innerHeight) {
+        top = window.innerHeight - 310;
+      }
+      if (top < 10) {
+        top = 10;
+      }
+      
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+      popup.classList.remove('hidden');
+    }
+    
+    /**
+     * Cierra el popup
+     */
+    function closeSlotPopup() {
+      activePopupSlotId = null;
+      document.getElementById('slotPopup').classList.add('hidden');
+    }
+    
+    /**
+     * Maneja la asignación desde el popup
+     */
+    function handlePopupAssign() {
+      if (!activePopupSlotId) return;
+      
+      const taskId = document.getElementById('popupTaskSelect').value;
+      const minutes = parseInt(document.getElementById('popupTaskMinutes').value, 10);
+      
+      if (!taskId) {
+        showToast('Selecciona una tarea', 'error');
+        return;
+      }
+      
+      if (!minutes || minutes <= 0) {
+        showToast('Los minutos deben ser mayor a 0', 'error');
+        return;
+      }
+      
+      try {
+        state = assignTask(state, activePopupSlotId, taskId, minutes);
+        save(state);
+        render();
+        
+        // Reabrir popup actualizado
+        const slotEl = document.querySelector(`.timeline-slot[data-id="${activePopupSlotId}"]`);
+        if (slotEl) {
+          openSlotPopup(activePopupSlotId, slotEl);
+        }
+        
+        showToast('Tarea asignada', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+    
+    // Cerrar popup al hacer click fuera
+    document.addEventListener('click', (e) => {
+      const popup = document.getElementById('slotPopup');
+      if (!popup.classList.contains('hidden') && 
+          !popup.contains(e.target) && 
+          !e.target.closest('.timeline-slot')) {
+        closeSlotPopup();
+      }
+    });
+    
+    document.getElementById('slotPopupClose').addEventListener('click', closeSlotPopup);
+    
+    // Listeners para cambiar rango del timeline
+    document.getElementById('timelineStart').addEventListener('change', (e) => {
+      timelineStartMin = parseTimeToMin(e.target.value);
+      renderSlots();
+    });
+    
+    document.getElementById('timelineEnd').addEventListener('change', (e) => {
+      timelineEndMin = parseTimeToMin(e.target.value);
+      renderSlots();
+    });
+
+    /**
+     * Renderiza todo
+     */
+    function render() {
+      // Actualizar label del día
+      document.getElementById('dayLabel').textContent = 
+        `${formatDateDisplay(state.dayKey)}`;
+      
+      renderTasks();
+      renderSlots();
+    }
+
+    /**
+     * Escapa HTML para prevenir XSS
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ========== HANDLERS ==========
+
+    function handleAddTask() {
+      const titleInput = document.getElementById('taskTitle');
+      const minutesInput = document.getElementById('taskMinutes');
+      
+      const title = titleInput.value.trim();
+      const minutes = parseInt(minutesInput.value, 10);
+      
+      if (!title) {
+        showToast('Escribe un nombre para la tarea', 'error');
+        titleInput.focus();
+        return;
+      }
+      
+      if (!minutes || minutes <= 0) {
+        showToast('La duración debe ser mayor a 0', 'error');
+        minutesInput.focus();
+        return;
+      }
+      
+      state = addTask(state, { title, estimateMin: minutes });
+      save(state);
+      render();
+      
+      titleInput.value = '';
+      minutesInput.value = '25';
+      titleInput.focus();
+      
+      showToast('Tarea añadida', 'success');
+    }
+
+    function handleAddSlot() {
+      const titleInput = document.getElementById('slotTitle');
+      const startInput = document.getElementById('slotStart');
+      const durationInput = document.getElementById('slotDuration');
+      
+      const title = titleInput.value.trim();
+      const startMin = parseTimeToMin(startInput.value);
+      const durationMin = parseInt(durationInput.value, 10);
+      
+      if (!title) {
+        showToast('Escribe un nombre para el hueco', 'error');
+        titleInput.focus();
+        return;
+      }
+      
+      if (!durationMin || durationMin <= 0) {
+        showToast('La duración debe ser mayor a 0', 'error');
+        durationInput.focus();
+        return;
+      }
+      
+      state = addSlot(state, { title, startMin, durationMin });
+      save(state);
+      render();
+      
+      titleInput.value = '';
+      titleInput.focus();
+      
+      showToast('Hueco añadido', 'success');
+    }
+
+    function handleToggleDone(taskId) {
+      state = toggleTaskDone(state, taskId);
+      save(state);
+      render();
+    }
+
+    function handleDeleteTask(taskId) {
+      if (!confirm('¿Eliminar esta tarea?')) return;
+      
+      state = removeTask(state, taskId);
+      save(state);
+      render();
+      showToast('Tarea eliminada');
+    }
+
+    function handleDeleteSlot(slotId) {
+      if (!confirm('¿Eliminar este hueco y sus asignaciones?')) return;
+      
+      state = removeSlot(state, slotId);
+      save(state);
+      render();
+      showToast('Hueco eliminado');
+    }
+
+    function handleRemoveAssignment(assignmentId) {
+      state = removeAssignment(state, assignmentId);
+      save(state);
+      render();
+      showToast('Asignación eliminada');
+    }
+
+    function handleAssignInSlot(slotId) {
+      const taskSelect = document.getElementById(`assign-task-${slotId}`);
+      const minInput = document.getElementById(`assign-min-${slotId}`);
+      
+      const taskId = taskSelect.value;
+      const minutes = parseInt(minInput.value, 10);
+      
+      if (!taskId) {
+        showToast('Selecciona una tarea', 'error');
+        return;
+      }
+      
+      if (!minutes || minutes <= 0) {
+        showToast('Los minutos deben ser mayor a 0', 'error');
+        return;
+      }
+      
+      try {
+        state = assignTask(state, slotId, taskId, minutes);
+        save(state);
+        render();
+        showToast('Tarea asignada', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // ========== MODALES ==========
+
+    function openEditTask(taskId) {
+      editingTaskId = taskId;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      document.getElementById('editTaskTitle').value = task.title;
+      document.getElementById('editTaskMinutes').value = task.estimateMin;
+      document.getElementById('editTaskModal').classList.add('show');
+    }
+
+    function closeEditTask() {
+      editingTaskId = null;
+      document.getElementById('editTaskModal').classList.remove('show');
+    }
+
+    function saveEditTask() {
+      if (!editingTaskId) return;
+      
+      const title = document.getElementById('editTaskTitle').value.trim();
+      const estimateMin = parseInt(document.getElementById('editTaskMinutes').value, 10);
+      
+      if (!title) {
+        showToast('El título no puede estar vacío', 'error');
+        return;
+      }
+      
+      if (!estimateMin || estimateMin <= 0) {
+        showToast('La duración debe ser mayor a 0', 'error');
+        return;
+      }
+      
+      // Comprobar si hay warning
+      const task = state.tasks.find(t => t.id === editingTaskId);
+      const allocated = state.assignments
+        .filter(a => a.taskId === editingTaskId)
+        .reduce((sum, a) => sum + a.minutes, 0);
+      
+      if (estimateMin < allocated) {
+        showToast(`Atención: Ya hay ${allocated} min asignados`, 'error');
+      }
+      
+      state = updateTask(state, editingTaskId, { title, estimateMin });
+      save(state);
+      render();
+      closeEditTask();
+      showToast('Tarea actualizada', 'success');
+    }
+
+    function openEditSlot(slotId) {
+      editingSlotId = slotId;
+      const slot = state.slots.find(s => s.id === slotId);
+      if (!slot) return;
+      
+      document.getElementById('editSlotTitle').value = slot.title;
+      document.getElementById('editSlotStart').value = formatMinToTime(slot.startMin);
+      document.getElementById('editSlotDuration').value = slot.durationMin;
+      document.getElementById('editSlotModal').classList.add('show');
+    }
+
+    function closeEditSlot() {
+      editingSlotId = null;
+      document.getElementById('editSlotModal').classList.remove('show');
+    }
+
+    function saveEditSlot() {
+      if (!editingSlotId) return;
+      
+      const title = document.getElementById('editSlotTitle').value.trim();
+      const startMin = parseTimeToMin(document.getElementById('editSlotStart').value);
+      const durationMin = parseInt(document.getElementById('editSlotDuration').value, 10);
+      
+      if (!title) {
+        showToast('El título no puede estar vacío', 'error');
+        return;
+      }
+      
+      if (!durationMin || durationMin <= 0) {
+        showToast('La duración debe ser mayor a 0', 'error');
+        return;
+      }
+      
+      // Comprobar si hay warning
+      const stats = getSlotStats(state, editingSlotId);
+      if (durationMin < stats.assignedMin) {
+        showToast(`Atención: Ya hay ${stats.assignedMin} min asignados`, 'error');
+      }
+      
+      state = updateSlot(state, editingSlotId, { title, startMin, durationMin });
+      save(state);
+      render();
+      closeEditSlot();
+      showToast('Hueco actualizado', 'success');
+    }
+
+    function openAssignFromTask(taskId) {
+      assigningTaskId = taskId;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      const taskStats = getTaskStats(state, taskId);
+      
+      // Filtrar slots con espacio disponible
+      const availableSlots = state.slots
+        .filter(s => getSlotStats(state, s.id).remainingMin > 0)
+        .sort((a, b) => a.startMin - b.startMin);
+      
+      if (availableSlots.length === 0) {
+        showToast('No hay huecos con espacio disponible', 'error');
+        return;
+      }
+      
+      document.getElementById('assignFromTaskInfo').textContent = 
+        `Tarea: ${task.title} (${taskStats.remainingMin} min restantes)`;
+      
+      const select = document.getElementById('assignFromTaskSlot');
+      select.innerHTML = availableSlots.map(s => {
+        const sStats = getSlotStats(state, s.id);
+        return `<option value="${s.id}">${s.title} (${sStats.remainingMin} min libres)</option>`;
+      }).join('');
+      
+      // Valor por defecto
+      const firstSlotStats = getSlotStats(state, availableSlots[0].id);
+      document.getElementById('assignFromTaskMinutes').value = 
+        Math.min(taskStats.remainingMin, firstSlotStats.remainingMin);
+      
+      document.getElementById('assignFromTaskModal').classList.add('show');
+    }
+
+    function closeAssignFromTask() {
+      assigningTaskId = null;
+      document.getElementById('assignFromTaskModal').classList.remove('show');
+    }
+
+    function confirmAssignFromTask() {
+      if (!assigningTaskId) return;
+      
+      const slotId = document.getElementById('assignFromTaskSlot').value;
+      const minutes = parseInt(document.getElementById('assignFromTaskMinutes').value, 10);
+      
+      if (!slotId) {
+        showToast('Selecciona un hueco', 'error');
+        return;
+      }
+      
+      if (!minutes || minutes <= 0) {
+        showToast('Los minutos deben ser mayor a 0', 'error');
+        return;
+      }
+      
+      try {
+        state = assignTask(state, slotId, assigningTaskId, minutes);
+        save(state);
+        render();
+        closeAssignFromTask();
+        showToast('Tarea asignada', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Actualizar minutos al cambiar slot en modal de asignación
+    document.getElementById('assignFromTaskSlot').addEventListener('change', () => {
+      const slotId = document.getElementById('assignFromTaskSlot').value;
+      if (slotId && assigningTaskId) {
+        const sStats = getSlotStats(state, slotId);
+        const tStats = getTaskStats(state, assigningTaskId);
+        document.getElementById('assignFromTaskMinutes').value = 
+          Math.min(tStats.remainingMin, sStats.remainingMin);
+      }
+    });
+
+    // ========== ACCIONES GLOBALES ==========
+
+    function handleToday() {
+      const today = getTodayKey();
+      if (state.dayKey !== today) {
+        if (confirm('El día ha cambiado. ¿Quieres hacer reset del día?')) {
+          state = resetDay(state);
+          save(state);
+        } else {
+          state = { ...state, dayKey: today };
+          save(state);
+        }
+      }
+      render();
+      showToast('Día actualizado a hoy');
+    }
+
+    function handleResetDay() {
+      if (!confirm('¿Resetear día? Se borrarán las tareas y asignaciones, pero se mantienen los huecos.')) return;
+      
+      state = resetDay(state);
+      save(state);
+      render();
+      showToast('Día reseteado', 'success');
+    }
+
+    function handleResetAll() {
+      if (!confirm('¿Resetear TODO? Se borrará toda la información.')) return;
+      
+      state = resetAll();
+      save(state);
+      render();
+      showToast('Todo reseteado', 'success');
+    }
+
+    function handleExport() {
+      const json = JSON.stringify(state, null, 2);
+      
+      document.getElementById('modalTitle').textContent = 'Exportar JSON';
+      document.getElementById('modalContent').innerHTML = `
+        <textarea readonly onclick="this.select()">${escapeHtml(json)}</textarea>
+        <p style="font-size: 0.85rem; color: var(--gray-500); margin-top: 8px;">
+          Copia este JSON para guardarlo externamente.
+        </p>
+      `;
+      document.getElementById('modalConfirm').classList.add('hidden');
+      document.getElementById('modalOverlay').classList.add('show');
+    }
+
+    function handleImport() {
+      document.getElementById('modalTitle').textContent = 'Importar JSON';
+      document.getElementById('modalContent').innerHTML = `
+        <textarea id="importTextarea" placeholder="Pega aquí el JSON..."></textarea>
+        <p style="font-size: 0.85rem; color: var(--gray-500); margin-top: 8px;">
+          Pega el JSON exportado previamente. Se reemplazarán todos los datos actuales.
+        </p>
+      `;
+      document.getElementById('modalConfirm').textContent = 'Importar';
+      document.getElementById('modalConfirm').classList.remove('hidden');
+      document.getElementById('modalConfirm').onclick = () => {
+        try {
+          const json = document.getElementById('importTextarea').value;
+          const imported = JSON.parse(json);
+          
+          // Validación básica
+          if (!imported.slots || !imported.tasks || !imported.assignments) {
+            throw new Error('JSON inválido');
+          }
+          
+          state = imported;
+          save(state);
+          render();
+          closeModal();
+          showToast('Datos importados', 'success');
+        } catch (e) {
+          showToast('Error al importar: ' + e.message, 'error');
+        }
+      };
+      document.getElementById('modalOverlay').classList.add('show');
+    }
+
+    function handleDemo() {
+      if (!confirm('¿Cargar datos de demostración? Se reemplazarán los datos actuales.')) return;
+      
+      state = {
+        version: 1,
+        dayKey: getTodayKey(),
+        slots: [
+          { id: uuid(), title: 'Desayuno', startMin: 480, durationMin: 30, color: null, notes: '' },
+          { id: uuid(), title: 'Bloque oficina', startMin: 540, durationMin: 120, color: null, notes: '' },
+          { id: uuid(), title: 'Almuerzo', startMin: 780, durationMin: 60, color: null, notes: '' },
+          { id: uuid(), title: 'Despacho tarde', startMin: 990, durationMin: 180, color: null, notes: '' }
+        ],
+        tasks: [
+          { id: uuid(), title: 'Responder emails', estimateMin: 25, remainingMin: 25, priority: 2, done: false },
+          { id: uuid(), title: 'Factura cliente', estimateMin: 40, remainingMin: 40, priority: 1, done: false },
+          { id: uuid(), title: 'Proyecto grande', estimateMin: 120, remainingMin: 120, priority: 2, done: false },
+          { id: uuid(), title: 'Llamada proveedor', estimateMin: 15, remainingMin: 15, priority: 3, done: false },
+          { id: uuid(), title: 'Revisar documentos', estimateMin: 30, remainingMin: 30, priority: 2, done: false }
+        ],
+        assignments: []
+      };
+      
+      save(state);
+      render();
+      showToast('Datos de demo cargados', 'success');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    // ========== EVENT LISTENERS ==========
+
+    document.getElementById('btnAddTask').addEventListener('click', handleAddTask);
+    document.getElementById('taskTitle').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAddTask();
+    });
+    
+    document.getElementById('btnAddSlot').addEventListener('click', handleAddSlot);
+    document.getElementById('slotTitle').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAddSlot();
+    });
+
+    // Filtros
+    document.querySelectorAll('.chip[data-filter]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentFilter = chip.dataset.filter;
+        renderTasks();
+      });
+    });
+
+    // Acciones globales
+    document.getElementById('btnToday').addEventListener('click', handleToday);
+    document.getElementById('btnResetDay').addEventListener('click', handleResetDay);
+    document.getElementById('btnResetAll').addEventListener('click', handleResetAll);
+    document.getElementById('btnExport').addEventListener('click', handleExport);
+    document.getElementById('btnImport').addEventListener('click', handleImport);
+    document.getElementById('btnDemo').addEventListener('click', handleDemo);
+
+    // Modales
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    // Modal editar tarea
+    document.getElementById('editTaskCancel').addEventListener('click', closeEditTask);
+    document.getElementById('editTaskSave').addEventListener('click', saveEditTask);
+    document.getElementById('editTaskModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('editTaskModal')) closeEditTask();
+    });
+
+    // Modal editar slot
+    document.getElementById('editSlotCancel').addEventListener('click', closeEditSlot);
+    document.getElementById('editSlotSave').addEventListener('click', saveEditSlot);
+    document.getElementById('editSlotModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('editSlotModal')) closeEditSlot();
+    });
+
+    // Modal asignar desde tarea
+    document.getElementById('assignFromTaskCancel').addEventListener('click', closeAssignFromTask);
+    document.getElementById('assignFromTaskConfirm').addEventListener('click', confirmAssignFromTask);
+    document.getElementById('assignFromTaskModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('assignFromTaskModal')) closeAssignFromTask();
+    });
+
+    // ========== PWA ==========
+
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registrado'))
+          .catch(err => console.log('SW error:', err));
+      });
+    }
+
+    // ========== INIT ==========
+    render();
+  </script>
+</body>
+</html>
