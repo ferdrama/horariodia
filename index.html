@@ -50,13 +50,18 @@
       top: 0;
       z-index: 100;
       box-shadow: var(--shadow);
+      transition: padding 0.3s;
     }
     
-    .header.collapsed .header-collapsible {
+    .header.collapsed {
+      padding: 8px 16px;
+    }
+    
+    .header.collapsed .header-content {
       display: none;
     }
     
-    .header-collapsible {
+    .header-content {
       display: block;
     }
     
@@ -90,6 +95,24 @@
     
     .header.collapsed .header-toggle:active {
       transform: rotate(180deg) scale(0.95);
+    }
+    
+    .header-minimal {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .header.collapsed .header-minimal-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+    
+    .header:not(.collapsed) .header-minimal-info {
+      display: none;
     }
     
     .header h1 {
@@ -1312,18 +1335,25 @@
 <body>
   <!-- HEADER -->
   <header class="header" id="mainHeader">
-    <div class="header-top">
-      <div>
-        <h1>🗓️ Huecos & Tareas</h1>
-        <div class="day-label" id="dayLabel">Hoy: --</div>
-      </div>
-      <button class="header-toggle" id="headerToggle" title="Mostrar/ocultar opciones">▲</button>
-      <div class="view-toggle">
-        <button id="viewNormal" class="active">📋 Normal</button>
-        <button id="viewChord">🔗 Conexiones</button>
+    <div class="header-minimal">
+      <button class="header-toggle" id="headerToggle" title="Mostrar/ocultar cabecera">▼</button>
+      <div class="header-minimal-info">
+        <span id="dayLabelMini">--</span>
+        <span>•</span>
+        <span id="summaryMini">--</span>
       </div>
     </div>
-    <div class="header-collapsible">
+    <div class="header-content">
+      <div class="header-top">
+        <div>
+          <h1>🗓️ Huecos & Tareas</h1>
+          <div class="day-label" id="dayLabel">Hoy: --</div>
+        </div>
+        <div class="view-toggle">
+          <button id="viewNormal" class="active">📋 Normal</button>
+          <button id="viewChord">🔗 Conexiones</button>
+        </div>
+      </div>
       <div class="header-actions">
         <button class="btn btn-primary btn-small" id="btnToday">📅 Hoy</button>
         <button class="btn btn-primary btn-small" id="btnResetDay">🔄 Reset día</button>
@@ -1342,21 +1372,21 @@
           <button id="unitPom">Pomodoros</button>
         </div>
       </div>
-    </div>
-    <div class="tasks-summary" id="tasksSummary">
-      <div class="tasks-summary-item">
-        <span class="label">📋 Tareas:</span>
-        <span class="value" id="summaryTasks">0/0</span>
-        <span class="value unassigned-time" id="summaryUnassignedTime">0m</span>
-        <span class="hint">pendiente</span>
-      </div>
-      <div class="tasks-summary-separator"></div>
-      <div class="tasks-summary-item">
-        <span class="label">⏰ Huecos:</span>
-        <span class="value" id="summarySlotsUsed">0m</span>
-        <span class="hint">/</span>
-        <span class="value slots-total" id="summarySlotsTotal">0m</span>
-        <span class="value available-time" id="summarySlotsAvailable">0m libre</span>
+      <div class="tasks-summary" id="tasksSummary">
+        <div class="tasks-summary-item">
+          <span class="label">📋 Tareas:</span>
+          <span class="value" id="summaryTasks">0/0</span>
+          <span class="value unassigned-time" id="summaryUnassignedTime">0m</span>
+          <span class="hint">pendiente</span>
+        </div>
+        <div class="tasks-summary-separator"></div>
+        <div class="tasks-summary-item">
+          <span class="label">⏰ Huecos:</span>
+          <span class="value" id="summarySlotsUsed">0m</span>
+          <span class="hint">/</span>
+          <span class="value slots-total" id="summarySlotsTotal">0m</span>
+          <span class="value available-time" id="summarySlotsAvailable">0m libre</span>
+        </div>
       </div>
     </div>
   </header>
@@ -1771,6 +1801,10 @@
       const availableEl = document.getElementById('summarySlotsAvailable');
       availableEl.textContent = `${fmt(availableSlotsMinutes)} libre`;
       availableEl.classList.toggle('none-available', availableSlotsMinutes === 0);
+      
+      // Actualizar resumen mini (cuando cabecera colapsada)
+      document.getElementById('summaryMini').textContent = 
+        `${assignedCount}/${totalTasks} tareas • ${fmt(availableSlotsMinutes)} libre`;
     }
 
     // ========== ESTADO ==========
@@ -3425,8 +3459,9 @@
      */
     function render() {
       // Actualizar label del día
-      document.getElementById('dayLabel').textContent = 
-        `${formatDateDisplay(state.dayKey)}`;
+      const dayText = formatDateDisplay(state.dayKey);
+      document.getElementById('dayLabel').textContent = dayText;
+      document.getElementById('dayLabelMini').textContent = dayText;
       
       renderTasks();
       renderSlots();
