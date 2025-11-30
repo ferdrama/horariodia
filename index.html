@@ -874,6 +874,69 @@
     .hidden {
       display: none !important;
     }
+    
+    /* ========== POMODORO CONFIG ========== */
+    .pomodoro-config {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+    }
+    
+    .pomodoro-config label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: white;
+    }
+    
+    .pomodoro-config input[type="number"] {
+      width: 50px;
+      padding: 4px 6px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      background: rgba(255,255,255,0.9);
+      font-size: 0.85rem;
+    }
+    
+    .unit-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 2px;
+    }
+    
+    .unit-toggle button {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      border-radius: 18px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .unit-toggle button.active {
+      background: white;
+      color: var(--primary);
+      font-weight: 500;
+    }
+    
+    .pomodoro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.8rem;
+    }
+    
+    .pomodoro-badge .pom-icon {
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -893,6 +956,16 @@
       <button class="btn btn-primary btn-small" id="btnDemo">🎯 Demo</button>
       <button class="btn btn-primary btn-small" id="btnResetAll">🗑️ Reset todo</button>
     </div>
+    <div class="pomodoro-config">
+      <label>
+        🍅 Pomodoro:
+        <input type="number" id="pomodoroDuration" value="25" min="1" max="120"> min
+      </label>
+      <div class="unit-toggle">
+        <button id="unitMin" class="active">Minutos</button>
+        <button id="unitPom">Pomodoros</button>
+      </div>
+    </div>
   </header>
 
   <!-- MAIN -->
@@ -903,7 +976,8 @@
       
       <div class="form-row">
         <input type="text" id="taskTitle" placeholder="Nueva tarea…" aria-label="Nombre de la tarea">
-        <input type="number" id="taskMinutes" value="25" min="1" placeholder="min" aria-label="Duración en minutos">
+        <input type="number" id="taskMinutes" value="1" min="0.25" step="0.25" placeholder="" aria-label="Duración">
+        <span id="taskUnitLabel" style="font-size:0.85rem; color:var(--gray-600); min-width:30px;">🍅</span>
         <button class="btn btn-success" id="btnAddTask">+ Añadir</button>
       </div>
       
@@ -923,7 +997,8 @@
       <div class="form-row">
         <input type="text" id="slotTitle" placeholder="Nombre del hueco…" aria-label="Nombre del hueco">
         <input type="time" id="slotStart" value="09:00" aria-label="Hora de inicio">
-        <input type="number" id="slotDuration" value="60" min="1" placeholder="min" aria-label="Duración en minutos">
+        <input type="number" id="slotDuration" value="2" min="0.25" step="0.25" placeholder="" aria-label="Duración">
+        <span id="slotUnitLabel" style="font-size:0.85rem; color:var(--gray-600); min-width:30px;">🍅</span>
         <button class="btn btn-success" id="btnAddSlot">+ Añadir</button>
       </div>
       
@@ -981,8 +1056,8 @@
       <h3>Editar Tarea</h3>
       <label>Título</label>
       <input type="text" id="editTaskTitle">
-      <label>Duración estimada (min)</label>
-      <input type="number" id="editTaskMinutes" min="1">
+      <label id="editTaskDurationLabel">Duración estimada</label>
+      <input type="number" id="editTaskMinutes" min="0.25" step="0.25">
       <div class="modal-actions">
         <button class="btn btn-secondary" id="editTaskCancel">Cancelar</button>
         <button class="btn btn-primary" id="editTaskSave">Guardar</button>
@@ -998,8 +1073,8 @@
       <input type="text" id="editSlotTitle">
       <label>Hora inicio</label>
       <input type="time" id="editSlotStart">
-      <label>Duración (min)</label>
-      <input type="number" id="editSlotDuration" min="1">
+      <label id="editSlotDurationLabel">Duración</label>
+      <input type="number" id="editSlotDuration" min="0.25" step="0.25">
       <div class="modal-actions">
         <button class="btn btn-secondary" id="editSlotCancel">Cancelar</button>
         <button class="btn btn-primary" id="editSlotSave">Guardar</button>
@@ -1014,8 +1089,8 @@
       <p id="assignFromTaskInfo"></p>
       <label>Seleccionar hueco</label>
       <select id="assignFromTaskSlot" style="width:100%; padding:10px; margin-bottom:10px; border-radius:var(--radius); border:1px solid var(--gray-300);"></select>
-      <label>Minutos a asignar</label>
-      <input type="number" id="assignFromTaskMinutes" min="1">
+      <label id="assignFromTaskMinutesLabel">A asignar</label>
+      <input type="number" id="assignFromTaskMinutes" min="0.25" step="0.25">
       <div class="modal-actions">
         <button class="btn btn-secondary" id="assignFromTaskCancel">Cancelar</button>
         <button class="btn btn-success" id="assignFromTaskConfirm">Asignar</button>
@@ -1092,6 +1167,155 @@
         day: 'numeric', 
         month: 'long' 
       });
+    }
+
+    // ========== POMODORO ==========
+    
+    const POMODORO_STORAGE_KEY = 'huecosPlanner.pomodoro';
+    
+    // Configuración de Pomodoro
+    let pomodoroConfig = {
+      duration: 25,      // Duración en minutos de 1 pomodoro
+      showAsPomodoros: true  // true = mostrar pomodoros, false = mostrar minutos
+    };
+    
+    /**
+     * Carga configuración de Pomodoro
+     */
+    function loadPomodoroConfig() {
+      try {
+        const raw = localStorage.getItem(POMODORO_STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          pomodoroConfig = { ...pomodoroConfig, ...saved };
+        }
+      } catch (e) {
+        console.warn('Error loading pomodoro config:', e);
+      }
+    }
+    
+    /**
+     * Guarda configuración de Pomodoro
+     */
+    function savePomodoroConfig() {
+      localStorage.setItem(POMODORO_STORAGE_KEY, JSON.stringify(pomodoroConfig));
+    }
+    
+    /**
+     * Convierte minutos a pomodoros (puede ser decimal)
+     */
+    function minToPomodoros(minutes) {
+      return minutes / pomodoroConfig.duration;
+    }
+    
+    /**
+     * Convierte pomodoros a minutos
+     */
+    function pomodorosToMin(pomodoros) {
+      return Math.round(pomodoros * pomodoroConfig.duration);
+    }
+    
+    /**
+     * Formatea duración según el modo actual (min o pomodoros)
+     */
+    function formatDuration(minutes, forceUnit = null) {
+      const unit = forceUnit || (pomodoroConfig.showAsPomodoros ? 'pom' : 'min');
+      
+      if (unit === 'pom') {
+        const poms = minToPomodoros(minutes);
+        // Mostrar con 1 decimal si no es entero
+        const formatted = Number.isInteger(poms) ? poms : poms.toFixed(1);
+        return `${formatted} 🍅`;
+      } else {
+        return `${minutes} min`;
+      }
+    }
+    
+    /**
+     * Formatea duración de forma compacta
+     */
+    function formatDurationCompact(minutes) {
+      if (pomodoroConfig.showAsPomodoros) {
+        const poms = minToPomodoros(minutes);
+        const formatted = Number.isInteger(poms) ? poms : poms.toFixed(1);
+        return `${formatted}🍅`;
+      } else {
+        return `${minutes}m`;
+      }
+    }
+    
+    /**
+     * Obtiene el valor de input según el modo y lo convierte a minutos
+     */
+    function inputToMinutes(inputValue) {
+      const value = parseFloat(inputValue);
+      if (isNaN(value) || value <= 0) return 0;
+      
+      if (pomodoroConfig.showAsPomodoros) {
+        return pomodorosToMin(value);
+      } else {
+        return Math.round(value);
+      }
+    }
+    
+    /**
+     * Convierte minutos a valor para input según el modo
+     */
+    function minutesToInputValue(minutes) {
+      if (pomodoroConfig.showAsPomodoros) {
+        const poms = minToPomodoros(minutes);
+        return Number.isInteger(poms) ? poms : parseFloat(poms.toFixed(2));
+      } else {
+        return minutes;
+      }
+    }
+    
+    /**
+     * Actualiza las etiquetas de unidad en la UI
+     */
+    function updateUnitLabels() {
+      const label = pomodoroConfig.showAsPomodoros ? '🍅' : 'min';
+      
+      document.getElementById('taskUnitLabel').textContent = label;
+      document.getElementById('slotUnitLabel').textContent = label;
+      
+      // Actualizar labels en modales
+      const editTaskLabel = document.getElementById('editTaskDurationLabel');
+      const editSlotLabel = document.getElementById('editSlotDurationLabel');
+      const assignLabel = document.getElementById('assignFromTaskMinutesLabel');
+      
+      if (editTaskLabel) {
+        editTaskLabel.textContent = pomodoroConfig.showAsPomodoros 
+          ? 'Duración estimada (🍅)' 
+          : 'Duración estimada (min)';
+      }
+      if (editSlotLabel) {
+        editSlotLabel.textContent = pomodoroConfig.showAsPomodoros 
+          ? 'Duración (🍅)' 
+          : 'Duración (min)';
+      }
+      if (assignLabel) {
+        assignLabel.textContent = pomodoroConfig.showAsPomodoros 
+          ? 'A asignar (🍅)' 
+          : 'A asignar (min)';
+      }
+      
+      // Actualizar valores por defecto en inputs
+      if (pomodoroConfig.showAsPomodoros) {
+        document.getElementById('taskMinutes').value = '1';
+        document.getElementById('taskMinutes').step = '0.25';
+        document.getElementById('slotDuration').value = '2';
+        document.getElementById('slotDuration').step = '0.25';
+      } else {
+        document.getElementById('taskMinutes').value = '25';
+        document.getElementById('taskMinutes').step = '1';
+        document.getElementById('slotDuration').value = '60';
+        document.getElementById('slotDuration').step = '1';
+      }
+      
+      // Actualizar botones de toggle
+      document.getElementById('unitMin').classList.toggle('active', !pomodoroConfig.showAsPomodoros);
+      document.getElementById('unitPom').classList.toggle('active', pomodoroConfig.showAsPomodoros);
     }
 
     // ========== ESTADO ==========
@@ -1488,9 +1712,9 @@
                   <h4 class="card-title">${escapeHtml(task.title)}</h4>
                 </div>
                 <div class="task-meta">
-                  <span>⏱️ ${task.estimateMin} min</span>
+                  <span>⏱️ ${formatDuration(task.estimateMin)}</span>
                   <span class="task-remaining ${stats.remainingMin === 0 ? 'zero' : ''}">
-                    ${stats.remainingMin > 0 ? `Restante: ${stats.remainingMin} min` : '✓ Asignada'}
+                    ${stats.remainingMin > 0 ? `Restante: ${formatDuration(stats.remainingMin)}` : '✓ Asignada'}
                   </span>
                 </div>
                 ${taskAssignments.length > 0 ? `
@@ -1498,7 +1722,7 @@
                     ${taskAssignments.map(a => {
                       const slot = state.slots.find(s => s.id === a.slotId);
                       return `<div class="task-assignment-chip">
-                        <span>📍 ${slot ? escapeHtml(slot.title) : '?'} (${a.minutes}m)</span>
+                        <span>📍 ${slot ? escapeHtml(slot.title) : '?'} (${formatDuration(a.minutes)})</span>
                         <button class="task-assignment-remove" onclick="handleRemoveAssignment('${a.id}')" title="Desasignar">✕</button>
                       </div>`;
                     }).join('')}
@@ -1640,7 +1864,7 @@
         slotEl.innerHTML = `
           <div class="timeline-slot-header">
             <div class="timeline-slot-title">${escapeHtml(slot.title)}</div>
-            <div class="timeline-slot-time">${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)} · ${stats.assignedMin}/${slot.durationMin}m</div>
+            <div class="timeline-slot-time">${formatMinToTime(slot.startMin)} – ${formatMinToTime(endMin)} · ${formatDuration(stats.assignedMin)}/${formatDuration(slot.durationMin)}</div>
           </div>
           ${assignments.length > 0 ? `
             <div class="timeline-slot-assignments" style="height: ${availableHeight}px;">
@@ -1649,13 +1873,13 @@
                 // Altura proporcional basada en minutos
                 const heightPx = (a.minutes / slot.durationMin) * availableHeight;
                 return `<div class="timeline-slot-assignment" style="height: ${Math.max(14, heightPx)}px;">
-                  <span>${task ? escapeHtml(task.title.slice(0, 25)) : '?'} (${a.minutes}m)</span>
+                  <span>${task ? escapeHtml(task.title.slice(0, 25)) : '?'} (${formatDuration(a.minutes)})</span>
                   <button class="slot-remove-assignment-btn" data-assignment-id="${a.id}">✕</button>
                 </div>`;
               }).join('')}
             </div>
           ` : (slotHeight > 60 ? `
-            <div class="timeline-slot-empty">${stats.remainingMin}m libres</div>
+            <div class="timeline-slot-empty">${formatDuration(stats.remainingMin)} libres</div>
           ` : '')}
           <div class="timeline-slot-actions">
             <button class="slot-edit-btn" data-slot-id="${slot.id}">✏️</button>
@@ -2193,8 +2417,8 @@
       
       // Capacidad
       document.getElementById('slotPopupCapacity').innerHTML = `
-        <strong>Asignado:</strong> ${stats.assignedMin}/${slot.durationMin} min 
-        — <strong>Restante:</strong> ${stats.remainingMin} min
+        <strong>Asignado:</strong> ${formatDuration(stats.assignedMin)}/${formatDuration(slot.durationMin)} 
+        — <strong>Restante:</strong> ${formatDuration(stats.remainingMin)}
         ${stats.isOverbooked ? '<span style="color:var(--danger)"> ⚠️ Excedido</span>' : ''}
       `;
       
@@ -2204,7 +2428,7 @@
             const task = state.tasks.find(t => t.id === a.taskId);
             return `
               <div class="slot-popup-assignment">
-                <span>${task ? escapeHtml(task.title) : '(eliminada)'} — ${a.minutes} min</span>
+                <span>${task ? escapeHtml(task.title) : '(eliminada)'} — ${formatDuration(a.minutes)}</span>
                 <button class="btn btn-small btn-danger" onclick="handleRemoveAssignment('${a.id}')">✕</button>
               </div>
             `;
@@ -2214,15 +2438,19 @@
       
       // Formulario de asignación
       if (stats.remainingMin > 0 && availableTasks.length > 0) {
+        const unitLabel = pomodoroConfig.showAsPomodoros ? '🍅' : 'min';
+        const defaultValue = pomodoroConfig.showAsPomodoros 
+          ? minToPomodoros(Math.min(availableTasks[0] ? getTaskStats(state, availableTasks[0].id).remainingMin : 25, stats.remainingMin))
+          : Math.min(availableTasks[0] ? getTaskStats(state, availableTasks[0].id).remainingMin : 25, stats.remainingMin);
         document.getElementById('slotPopupForm').innerHTML = `
           <select id="popupTaskSelect">
             <option value="">Seleccionar tarea...</option>
             ${availableTasks.map(t => {
               const tStats = getTaskStats(state, t.id);
-              return `<option value="${t.id}">${escapeHtml(t.title)} (${tStats.remainingMin}m)</option>`;
+              return `<option value="${t.id}">${escapeHtml(t.title)} (${formatDuration(tStats.remainingMin)})</option>`;
             }).join('')}
           </select>
-          <input type="number" id="popupTaskMinutes" min="1" value="${Math.min(availableTasks[0] ? getTaskStats(state, availableTasks[0].id).remainingMin : 25, stats.remainingMin)}">
+          <input type="number" id="popupTaskMinutes" min="${pomodoroConfig.showAsPomodoros ? '0.5' : '1'}" step="${pomodoroConfig.showAsPomodoros ? '0.5' : '1'}" value="${defaultValue}" placeholder="${unitLabel}">
           <button class="btn btn-small btn-success" onclick="handlePopupAssign()">+</button>
         `;
         
@@ -2232,7 +2460,10 @@
           if (taskId) {
             const tStats = getTaskStats(state, taskId);
             const sStats = getSlotStats(state, activePopupSlotId);
-            document.getElementById('popupTaskMinutes').value = Math.min(tStats.remainingMin, sStats.remainingMin);
+            const minValue = Math.min(tStats.remainingMin, sStats.remainingMin);
+            document.getElementById('popupTaskMinutes').value = pomodoroConfig.showAsPomodoros 
+              ? minToPomodoros(minValue) 
+              : minValue;
           }
         });
       } else if (stats.remainingMin <= 0) {
@@ -2284,7 +2515,8 @@
       if (!activePopupSlotId) return;
       
       const taskId = document.getElementById('popupTaskSelect').value;
-      const minutes = parseInt(document.getElementById('popupTaskMinutes').value, 10);
+      const inputValue = document.getElementById('popupTaskMinutes').value;
+      const minutes = inputToMinutes(inputValue);
       
       if (!taskId) {
         showToast('Selecciona una tarea', 'error');
@@ -2292,7 +2524,7 @@
       }
       
       if (!minutes || minutes <= 0) {
-        showToast('Los minutos deben ser mayor a 0', 'error');
+        showToast('El tiempo debe ser mayor a 0', 'error');
         return;
       }
       
@@ -2361,12 +2593,12 @@
       overbookingContext = { slotId, taskId, excessMin, newSlotDuration, newTaskDuration };
       
       document.getElementById('overbookingInfo').innerHTML = `
-        Has asignado <strong>${minutesAssigned} min</strong> de "${escapeHtml(task.title)}" 
+        Has asignado <strong>${formatDuration(minutesAssigned)}</strong> de "${escapeHtml(task.title)}" 
         al hueco "${escapeHtml(slot.title)}".<br><br>
-        El hueco está <strong>excedido por ${excessMin} min</strong>.
+        El hueco está <strong>excedido por ${formatDuration(excessMin)}</strong>.
       `;
-      document.getElementById('overbookingNewSlotDuration').textContent = newSlotDuration;
-      document.getElementById('overbookingNewTaskDuration').textContent = newTaskDuration;
+      document.getElementById('overbookingNewSlotDuration').textContent = formatDuration(newSlotDuration);
+      document.getElementById('overbookingNewTaskDuration').textContent = formatDuration(newTaskDuration);
       
       document.getElementById('overbookingModal').classList.add('show');
     }
@@ -2442,7 +2674,7 @@
       const minutesInput = document.getElementById('taskMinutes');
       
       const title = titleInput.value.trim();
-      const minutes = parseInt(minutesInput.value, 10);
+      const minutes = inputToMinutes(minutesInput.value);
       
       if (!title) {
         showToast('Escribe un nombre para la tarea', 'error');
@@ -2461,7 +2693,8 @@
       render();
       
       titleInput.value = '';
-      minutesInput.value = '25';
+      // Restaurar valor por defecto según modo
+      minutesInput.value = pomodoroConfig.showAsPomodoros ? '1' : '25';
       titleInput.focus();
       
       showToast('Tarea añadida', 'success');
@@ -2474,7 +2707,7 @@
       
       const title = titleInput.value.trim();
       const startMin = parseTimeToMin(startInput.value);
-      const durationMin = parseInt(durationInput.value, 10);
+      const durationMin = inputToMinutes(durationInput.value);
       
       if (!title) {
         showToast('Escribe un nombre para el hueco', 'error');
@@ -2493,6 +2726,8 @@
       render();
       
       titleInput.value = '';
+      // Restaurar valor por defecto según modo
+      durationInput.value = pomodoroConfig.showAsPomodoros ? '2' : '60';
       titleInput.focus();
       
       showToast('Hueco añadido', 'success');
@@ -2564,7 +2799,7 @@
       if (!task) return;
       
       document.getElementById('editTaskTitle').value = task.title;
-      document.getElementById('editTaskMinutes').value = task.estimateMin;
+      document.getElementById('editTaskMinutes').value = minutesToInputValue(task.estimateMin);
       document.getElementById('editTaskModal').classList.add('show');
     }
 
@@ -2577,7 +2812,7 @@
       if (!editingTaskId) return;
       
       const title = document.getElementById('editTaskTitle').value.trim();
-      const estimateMin = parseInt(document.getElementById('editTaskMinutes').value, 10);
+      const estimateMin = inputToMinutes(document.getElementById('editTaskMinutes').value);
       
       if (!title) {
         showToast('El título no puede estar vacío', 'error');
@@ -2600,7 +2835,7 @@
       closeEditTask();
       
       if (estimateMin < allocated) {
-        showToast(`Asignaciones ajustadas de ${allocated} a ${estimateMin} min`, 'info');
+        showToast(`Asignaciones ajustadas de ${formatDuration(allocated)} a ${formatDuration(estimateMin)}`, 'info');
       } else {
         showToast('Tarea actualizada', 'success');
       }
@@ -2613,7 +2848,7 @@
       
       document.getElementById('editSlotTitle').value = slot.title;
       document.getElementById('editSlotStart').value = formatMinToTime(slot.startMin);
-      document.getElementById('editSlotDuration').value = slot.durationMin;
+      document.getElementById('editSlotDuration').value = minutesToInputValue(slot.durationMin);
       document.getElementById('editSlotModal').classList.add('show');
     }
 
@@ -2627,7 +2862,7 @@
       
       const title = document.getElementById('editSlotTitle').value.trim();
       const startMin = parseTimeToMin(document.getElementById('editSlotStart').value);
-      const durationMin = parseInt(document.getElementById('editSlotDuration').value, 10);
+      const durationMin = inputToMinutes(document.getElementById('editSlotDuration').value);
       
       if (!title) {
         showToast('El título no puede estar vacío', 'error');
@@ -2642,7 +2877,7 @@
       // Comprobar si hay warning
       const stats = getSlotStats(state, editingSlotId);
       if (durationMin < stats.assignedMin) {
-        showToast(`Atención: Ya hay ${stats.assignedMin} min asignados`, 'error');
+        showToast(`Atención: Ya hay ${formatDuration(stats.assignedMin)} asignados`, 'error');
       }
       
       state = updateSlot(state, editingSlotId, { title, startMin, durationMin });
@@ -2670,18 +2905,19 @@
       }
       
       document.getElementById('assignFromTaskInfo').textContent = 
-        `Tarea: ${task.title} (${taskStats.remainingMin} min restantes)`;
+        `Tarea: ${task.title} (${formatDuration(taskStats.remainingMin)} restantes)`;
       
       const select = document.getElementById('assignFromTaskSlot');
       select.innerHTML = availableSlots.map(s => {
         const sStats = getSlotStats(state, s.id);
-        return `<option value="${s.id}">${s.title} (${sStats.remainingMin} min libres)</option>`;
+        return `<option value="${s.id}">${s.title} (${formatDuration(sStats.remainingMin)} libres)</option>`;
       }).join('');
       
       // Valor por defecto
       const firstSlotStats = getSlotStats(state, availableSlots[0].id);
+      const defaultValue = Math.min(taskStats.remainingMin, firstSlotStats.remainingMin);
       document.getElementById('assignFromTaskMinutes').value = 
-        Math.min(taskStats.remainingMin, firstSlotStats.remainingMin);
+        pomodoroConfig.showAsPomodoros ? minToPomodoros(defaultValue) : defaultValue;
       
       document.getElementById('assignFromTaskModal').classList.add('show');
     }
@@ -2695,7 +2931,8 @@
       if (!assigningTaskId) return;
       
       const slotId = document.getElementById('assignFromTaskSlot').value;
-      const minutes = parseInt(document.getElementById('assignFromTaskMinutes').value, 10);
+      const inputValue = document.getElementById('assignFromTaskMinutes').value;
+      const minutes = inputToMinutes(inputValue);
       
       if (!slotId) {
         showToast('Selecciona un hueco', 'error');
@@ -2703,7 +2940,7 @@
       }
       
       if (!minutes || minutes <= 0) {
-        showToast('Los minutos deben ser mayor a 0', 'error');
+        showToast('El tiempo debe ser mayor a 0', 'error');
         return;
       }
       
@@ -2724,8 +2961,9 @@
       if (slotId && assigningTaskId) {
         const sStats = getSlotStats(state, slotId);
         const tStats = getTaskStats(state, assigningTaskId);
+        const minValue = Math.min(tStats.remainingMin, sStats.remainingMin);
         document.getElementById('assignFromTaskMinutes').value = 
-          Math.min(tStats.remainingMin, sStats.remainingMin);
+          pomodoroConfig.showAsPomodoros ? minToPomodoros(minValue) : minValue;
       }
     });
 
@@ -2898,6 +3136,36 @@
       if (e.target === document.getElementById('assignFromTaskModal')) closeAssignFromTask();
     });
 
+    // ========== POMODORO EVENTS ==========
+    
+    // Toggle unidades min/pomodoros
+    document.getElementById('unitMin').addEventListener('click', () => {
+      pomodoroConfig.showAsPomodoros = false;
+      savePomodoroConfig();
+      updateUnitLabels();
+      render();
+    });
+    
+    document.getElementById('unitPom').addEventListener('click', () => {
+      pomodoroConfig.showAsPomodoros = true;
+      savePomodoroConfig();
+      updateUnitLabels();
+      render();
+    });
+    
+    // Cambio de duración del pomodoro
+    document.getElementById('pomodoroDuration').addEventListener('change', (e) => {
+      const value = parseInt(e.target.value, 10);
+      if (value >= 1 && value <= 120) {
+        pomodoroConfig.duration = value;
+        savePomodoroConfig();
+        render();
+        showToast(`Pomodoro = ${value} minutos`, 'success');
+      } else {
+        e.target.value = pomodoroConfig.duration;
+      }
+    });
+
     // ========== PWA ==========
 
     // Registrar Service Worker
@@ -2910,6 +3178,9 @@
     }
 
     // ========== INIT ==========
+    loadPomodoroConfig();
+    document.getElementById('pomodoroDuration').value = pomodoroConfig.duration;
+    updateUnitLabels();
     render();
   </script>
 </body>
